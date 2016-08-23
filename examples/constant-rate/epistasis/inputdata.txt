@@ -1,0 +1,30 @@
+# SIMULATION INPUTS - USE “#” TO COMMENT OUT LINES
+#
+# SIMULATION PARAMETERS
+tot_life, 10000
+max_pop, 100000
+ancestors, 10
+ancestor_clones, 5
+num_sims, 3
+observation_times, 1 10 100 500 1000
+observation_frequency, 0.1
+allow_extinction, 1
+detection_threshold, 0.0
+trace_ancestry, 0
+count_alleles, 0
+# RATE PARAMETERS
+birth_rate, 1.0
+death_rate, 0.5
+mutation_prob, 0.0001
+# FITNESS DISTRIBUTION PARAMETERS
+alpha_fitness, 100
+beta_fitness, 100
+pass_prob, 0.5
+upper_fitness, 1
+lower_fitness, -1
+# MUTATION DISTRIBUTION PARAMETERS
+alpha_mutation, 100
+beta_mutation, 100
+# EPISTATIC PARAMETERS
+epistatic_mutation_thresh,	3
+epistatic_multiplier,	10

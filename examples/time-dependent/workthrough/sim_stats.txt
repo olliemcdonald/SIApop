@@ -1,0 +1,35 @@
+B_max, 1.0
+D_max, 1.0
+allow_extinction, 1
+alpha_fitness, 100
+alpha_mutation, 0
+ancestor_clones, 5
+ancestors, 5
+beta_fitness, 100
+beta_mutation, 0
+birth_function, 1
+birth_rate, 1.0
+death_function, 1
+death_rate, 0.5
+detection_threshold, 0.0
+epistatic_multiplier, 1
+epistatic_mutation_thresh, 1
+lower_fitness, -1
+max_pop, 100000
+mutation_prob, 0.00001
+num_sims, 3
+observation_frequency, 0.1
+pass_prob, 0.01
+poisson_param, 1
+punctuated_advantageous_prob, 0.1
+punctuated_fitness_multiplier, 1
+punctuated_prob, 0
+start_time, 0
+td_birth_params, 1.1 -0.11 0.05
+td_death_params, 1 -0.1 0.05
+tot_life, 10000
+trace_ancestry, 1
+upper_fitness, 1
+avg_sim_endtime, 27.36239419
+count_detect, 3
+count_extinct, 0
