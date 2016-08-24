@@ -16,6 +16,8 @@ GlobalParameters gp;
 RateFunctionsPtr func_array[] = {&RateFunctions::constant, &RateFunctions::linear, &RateFunctions::logistic};
 gsl_integration_workspace *workspace = gsl_integration_workspace_alloc(1000);
 
+// Pointer to Function class which will point to an instance of one based on parameters
+CloneList::NewCloneFunction* NewClone;
 
 int main(int argc, char *argv[])
 {
@@ -240,8 +242,6 @@ int main(int argc, char *argv[])
   double rand_next_time;
   int count_extinct = 0;
 
-  // Pointer to Function class which will point to an instance of one based on parameters
-  CloneList::AdvanceStateFunction* AdvanceState;
 
   for (int sim = 1; sim <= gp.num_sims; sim++)
   {
@@ -258,22 +258,26 @@ int main(int argc, char *argv[])
     // Determine Advance function class to use based on the parameters
     if( punct_params.is_punctuated )
     {
-      AdvanceState = new CloneList::AdvanceStatePunct(population, fit_params, mut_params, punct_params);
+      NewClone = new CloneList::NewClonePunct(population, fit_params, mut_params, punct_params);
     }
     else if( fit_params.is_randfitness || mut_params.is_mutator )
     {
       if ( epi_params.is_epistasis )
       {
-        AdvanceState = new CloneList::AdvanceStateEpi(population, fit_params, mut_params, epi_params);
+        NewClone = new CloneList::NewCloneEpi(population, fit_params, mut_params, epi_params);
       }
       else
       {
-        AdvanceState = new CloneList::AdvanceStateFitMut(population, fit_params, mut_params);
+        NewClone = new CloneList::NewCloneFitMut(population, fit_params, mut_params);
       }
     }
-    else
+    else /*if (gp.is_custom_model)
     {
-      AdvanceState = new CloneList::AdvanceStateNoParams(population);
+      NewClone = new CloneList::NewCloneCustom(popoulation);
+    }
+    else*/
+    {
+      NewClone = new CloneList::NewCloneNoParams(population);
     }
 
 
@@ -449,7 +453,7 @@ int main(int argc, char *argv[])
       rand_next_time = population.AdvanceTime(current_time);
 
       // Advance Simulation State (choose next event)
-      (*AdvanceState)(current_time, rand_next_time);
+      population.AdvanceState(current_time, rand_next_time);
 
       // update current_time
       current_time = current_time + rand_next_time;

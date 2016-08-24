@@ -231,37 +231,37 @@ double CloneList::AdvanceTime(double curr_time)
   return rand_next_time;
 }
 
-void CloneList::AdvanceStateNoParams::operator()(double curr_time, double next_time)
+void CloneList::AdvanceState(double curr_time, double next_time)
 {
   double summand = 0;
   struct clone *pnode;
-  cl.tot_rate_integ = 0;
+  tot_rate_integ = 0;
   bool flag = false;
 
-  pnode = cl.root;
+  pnode = root;
   // Collect total rates over time between last and next event
   while(pnode)
   {
     // integrals for determining next clone
     gsl_integration_qags(&(pnode->B), curr_time, curr_time + next_time,
-      0, 1e-12, 1000, workspace, &(cl.int_result_b), &(cl.int_error_b));
-    pnode->birth_rate = cl.int_result_b;
-    gp.tot_error = gp.tot_error + cl.int_error_b;
+      0, 1e-12, 1000, workspace, &(int_result_b), &(int_error_b));
+    pnode->birth_rate = int_result_b;
+    gp.tot_error = gp.tot_error + int_error_b;
 
     gsl_integration_qags(&(pnode->D), curr_time, curr_time + next_time,
-      0, 1e-12, 1000, workspace, &(cl.int_result_d), &(cl.int_error_d));
-    pnode->death_rate = cl.int_result_d;
-    gp.tot_error = gp.tot_error + cl.int_error_d;
+      0, 1e-12, 1000, workspace, &(int_result_d), &(int_error_d));
+    pnode->death_rate = int_result_d;
+    gp.tot_error = gp.tot_error + int_error_d;
 
 
-    cl.tot_rate_integ = cl.tot_rate_integ + (pnode->birth_rate + pnode->death_rate) * pnode->cell_count;
+    tot_rate_integ = tot_rate_integ + (pnode->birth_rate + pnode->death_rate) * pnode->cell_count;
     pnode = pnode->nextnode;
   }
 
-  double rand_next_event = gsl_ran_flat(gp.rng, 0, cl.tot_rate_integ);
+  double rand_next_event = gsl_ran_flat(gp.rng, 0, tot_rate_integ);
   double rand_mut_occur;
   // Put pnode back to the root
-  pnode = cl.root;
+  pnode = root;
 
   while ( (pnode) && !(flag) )
   {
@@ -285,45 +285,44 @@ void CloneList::AdvanceStateNoParams::operator()(double curr_time, double next_t
         // Update parent subclones
         pnode->subclone_count = pnode->subclone_count + 1;
 
-        // update rates
         new_mut_node->mut_prob = pnode->mut_prob;
-        // updating time-dependent parameters
         new_mut_node->birth_params = pnode->birth_params;
         new_mut_node->death_params = pnode->death_params;
         (new_mut_node->B).function = func_array[new_mut_node->birth_params.type];
         (new_mut_node->B).params = &(new_mut_node->birth_params);
         (new_mut_node->D).function = func_array[new_mut_node->death_params.type];
         (new_mut_node->D).params = &(new_mut_node->death_params);
-        // end of update rates
+
+        // Function class to add any modifications to rates and insert clone
+        (*NewClone)(new_mut_node, pnode);
 
         // Reset birth and death rates (recalc at beginning of next AdvanceState)
         new_mut_node->birth_rate = 0;
         new_mut_node->death_rate = 0;
 
-        cl.tot_rate_homog = cl.tot_rate_homog + new_mut_node->birth_params.rate * gp.B_max +
+        tot_rate_homog = tot_rate_homog + new_mut_node->birth_params.rate * gp.B_max +
           new_mut_node->death_params.rate * gp.D_max;
 
-        cl.tot_cell_count++;
-        cl.num_clones++;
-        cl.num_mutations++;
+        tot_cell_count++;
+        num_clones++;
+        num_mutations++;
 
-        cl.currnode = pnode;
+        currnode = pnode;
         pnode = new_mut_node;
-        cl.InsertNode(pnode, 1);
-        if(gp.count_alleles) cl.ChangeAncestorAllele(pnode, true);
+        if(gp.count_alleles) ChangeAncestorAllele(pnode, true);
       }
       else
       {
         pnode->cell_count++;
-        cl.tot_cell_count++;
-        if(gp.count_alleles) cl.ChangeAncestorAllele(pnode, true);
+        tot_cell_count++;
+        if(gp.count_alleles) ChangeAncestorAllele(pnode, true);
         // Add to homogeneous process that undergoes thinning
-        cl.tot_rate_homog = cl.tot_rate_homog + pnode->birth_params.rate * gp.B_max +
+        tot_rate_homog = tot_rate_homog + pnode->birth_params.rate * gp.B_max +
           pnode->death_params.rate * gp.D_max;
       }
 
       // Reprioritize clone based on size by moving to left
-      cl.CloneSort(pnode, true);
+      CloneSort(pnode, true);
 
       flag = true;
       break;
@@ -334,22 +333,22 @@ void CloneList::AdvanceStateNoParams::operator()(double curr_time, double next_t
     {
       // Death occurs
       pnode->cell_count = pnode->cell_count - 1;
-      cl.tot_cell_count = cl.tot_cell_count - 1;
-      if(gp.count_alleles) cl.ChangeAncestorAllele(pnode, false);
-      cl.tot_rate_homog = cl.tot_rate_homog - pnode->birth_params.rate * gp.B_max -
+      tot_cell_count = tot_cell_count - 1;
+      if(gp.count_alleles) ChangeAncestorAllele(pnode, false);
+      tot_rate_homog = tot_rate_homog - pnode->birth_params.rate * gp.B_max -
         pnode->death_params.rate * gp.D_max;
 
       // Clean up of clones with zero to speed up later runs
       if(pnode->cell_count == 0)
       {
         // remove pnode by attaching it to deadlist
-        cl.CutNodeOut(pnode);
+        CutNodeOut(pnode);
         flag = true;
         break;
       }
 
       // sort by moving to the right until fits
-      cl.CloneSort(pnode, false);
+      CloneSort(pnode, false);
       flag = true;
       break;
     }
@@ -366,523 +365,173 @@ void CloneList::AdvanceStateNoParams::operator()(double curr_time, double next_t
   }
 }
 
-void CloneList::AdvanceStateFitMut::operator()(double curr_time, double next_time)
+void CloneList::NewCloneNoParams::operator()(struct clone *new_clone, struct clone *parent_clone)
 {
-  double summand = 0;
-  struct clone *pnode;
-  cl.tot_rate_integ = 0;
-  bool flag = false;
-
-  pnode = cl.root;
-  // Collect total rates over time between last and next event
-  while(pnode)
-  {
-    // integrals for determining next clone
-    gsl_integration_qags(&(pnode->B), curr_time, curr_time + next_time,
-      0, 1e-12, 1000, workspace, &(cl.int_result_b), &(cl.int_error_b));
-    pnode->birth_rate = cl.int_result_b;
-    gp.tot_error = gp.tot_error + cl.int_error_b;
-
-    gsl_integration_qags(&(pnode->D), curr_time, curr_time + next_time,
-      0, 1e-12, 1000, workspace, &(cl.int_result_d), &(cl.int_error_d));
-    pnode->death_rate = cl.int_result_d;
-    gp.tot_error = gp.tot_error + cl.int_error_d;
-
-    cl.tot_rate_integ = cl.tot_rate_integ + (pnode->birth_rate + pnode->death_rate) * pnode->cell_count;
-    pnode = pnode->nextnode;
-  }
-
-  double rand_next_event = gsl_ran_flat(gp.rng, 0, cl.tot_rate_integ);
-  double rand_mut_occur;
-  // Put pnode back to the root
-  pnode = cl.root;
-
-  while ( (pnode) && !(flag) )
-  {
-    if ( rand_next_event <= summand + (pnode->cell_count) * (pnode->birth_rate) )
-    {
-      rand_mut_occur = gsl_ran_flat(gp.rng, 0, 1);
-
-      if (rand_mut_occur <= pnode->mut_prob)
-      {
-        // Creation of new clone
-        struct clone *new_mut_node;
-        new_mut_node = new struct clone;
-        new_mut_node->clone_id = pnode->clone_id;
-        new_mut_node->driver_count = pnode->driver_count;
-        new_mut_node->subclone_count = 0;
-        new_mut_node->cell_count = 1;
-        new_mut_node->allele_count = 0;
-        new_mut_node->clone_time = curr_time + next_time;
-        new_mut_node->mut_count = pnode->mut_count + 1;
-        new_mut_node->is_driver = false;
-        // Update parent subclones
-        pnode->subclone_count = pnode->subclone_count + 1;
-
-        // update rates
-        // updating time-dependent parameters
-        new_mut_node->birth_params = pnode->birth_params;
-        new_mut_node->death_params = pnode->death_params;
-
-        bool did_count_driver = false;
-        // generation of additive rate to the fitness
-        if(fit_params.is_randfitness)
-        {
-          double additional_rate = GenerateFitness(fit_params);
-
-          if (additional_rate > 0)
-          {
-            new_mut_node->driver_count++;
-            did_count_driver = true;
-            new_mut_node->is_driver = true;
-          }
-          new_mut_node->birth_params.rate = fmax(0, additional_rate + new_mut_node->birth_params.rate);
-        }
-
-        if(mut_params.is_mutator)
-        {
-          double additional_mut_prob = GenerateMutationProb(mut_params);
-          if(additional_mut_prob > 0)
-          {
-            if(!did_count_driver) new_mut_node->driver_count++;
-            new_mut_node->is_driver = true;
-          }
-          new_mut_node->mut_prob = fmin(1, pnode->mut_prob + additional_mut_prob);
-        }
-        else
-        {
-          new_mut_node->mut_prob = pnode->mut_prob;
-        }
-
-        (new_mut_node->B).function = func_array[new_mut_node->birth_params.type];
-        (new_mut_node->D).function = func_array[new_mut_node->death_params.type];
-        (new_mut_node->B).params = &(new_mut_node->birth_params);
-        (new_mut_node->D).params = &(new_mut_node->death_params);
-        // end of update rates
-
-        // Reset birth and death rates (recalc at beginning of next AdvanceState)
-        new_mut_node->birth_rate = 0;
-        new_mut_node->death_rate = 0;
-
-        cl.tot_rate_homog = cl.tot_rate_homog + new_mut_node->birth_params.rate * gp.B_max +
-          new_mut_node->death_params.rate * gp.D_max;
-
-        cl.tot_cell_count++;
-        cl.num_clones++;
-        cl.num_mutations++;
-
-        cl.currnode = pnode;
-        pnode = new_mut_node;
-        cl.InsertNode(pnode, 1);
-        if(gp.count_alleles) cl.ChangeAncestorAllele(pnode, true);
-      }
-      else
-      {
-        pnode->cell_count++;
-        cl.tot_cell_count++;
-        if(gp.count_alleles) cl.ChangeAncestorAllele(pnode, true);
-        // Add to homogeneous process that undergoes thinning
-        cl.tot_rate_homog = cl.tot_rate_homog + pnode->birth_params.rate * gp.B_max +
-          pnode->death_params.rate * gp.D_max;
-      }
-
-      // Reprioritize clone based on size by moving to left
-      cl.CloneSort(pnode, true);
-
-      flag = true;
-      break;
-
-    }
-
-    if(rand_next_event <= summand + (pnode->cell_count) * ((pnode->birth_rate) + (pnode->death_rate)) )
-    {
-      // Death occurs
-      pnode->cell_count = pnode->cell_count - 1;
-      cl.tot_cell_count = cl.tot_cell_count - 1;
-      if(gp.count_alleles) cl.ChangeAncestorAllele(pnode, false);
-      cl.tot_rate_homog = cl.tot_rate_homog - pnode->birth_params.rate * gp.B_max -
-        pnode->death_params.rate * gp.D_max;
-
-      // Clean up of clones with zero to speed up later runs
-      if(pnode->cell_count == 0)
-      {
-        // remove pnode by attaching it to deadlist
-        cl.CutNodeOut(pnode);
-        flag = true;
-        break;
-      }
-
-      // sort by moving to the right until fits
-      cl.CloneSort(pnode, false);
-      flag = true;
-      break;
-    }
-
-    summand = summand + (pnode->cell_count) * ((pnode->birth_rate + pnode->death_rate));
-    pnode = pnode->nextnode;
-
-  }
-
-  if (!flag)
-  {
-    std::cout << "error: step not completed" << "\n";
-    exit(0);
-  }
+  cl.InsertNode(new_clone, 1);
 }
 
-void CloneList::AdvanceStatePunct::operator()(double curr_time, double next_time)
+void CloneList::NewCloneFitMut::operator()(struct clone *new_clone, struct clone *parent_clone)
 {
-  double summand = 0;
-  struct clone *pnode;
-  cl.tot_rate_integ = 0;
-  bool flag = false;
+  // updating time-dependent parameters
+  new_clone->birth_params = parent_clone->birth_params;
+  new_clone->death_params = parent_clone->death_params;
 
-  pnode = cl.root;
-  // Collect total rates over time between last and next event
-  while(pnode)
+  bool did_count_driver = false;
+  // generation of additive rate to the fitness
+  if(fit_params.is_randfitness)
   {
-    // integrals for determining next clone
-    gsl_integration_qags(&(pnode->B), curr_time, curr_time + next_time,
-      0, 1e-12, 1000, workspace, &(cl.int_result_b), &(cl.int_error_b));
-    pnode->birth_rate = cl.int_result_b;
-    gp.tot_error = gp.tot_error + cl.int_error_b;
+    double additional_rate = GenerateFitness(fit_params);
 
-    gsl_integration_qags(&(pnode->D), curr_time, curr_time + next_time,
-      0, 1e-12, 1000, workspace, &(cl.int_result_d), &(cl.int_error_d));
-    pnode->death_rate = cl.int_result_d;
-    gp.tot_error = gp.tot_error + cl.int_error_d;
-
-
-    cl.tot_rate_integ = cl.tot_rate_integ + (pnode->birth_rate + pnode->death_rate) * pnode->cell_count;
-    pnode = pnode->nextnode;
-  }
-
-  double rand_next_event = gsl_ran_flat(gp.rng, 0, cl.tot_rate_integ);
-  double rand_mut_occur;
-  // Put pnode back to the root
-  pnode = cl.root;
-
-  while ( (pnode) && !(flag) )
-  {
-    if ( rand_next_event <= summand + (pnode->cell_count) * (pnode->birth_rate) )
+    if (additional_rate > 0)
     {
-      rand_mut_occur = gsl_ran_flat(gp.rng, 0, 1);
-
-      if (rand_mut_occur <= pnode->mut_prob)
-      {
-        int number_mutations = 1;
-
-        // Creation of new clone
-        struct clone *new_mut_node;
-        new_mut_node = new struct clone;
-        new_mut_node->clone_id = pnode->clone_id;
-        new_mut_node->driver_count = pnode->driver_count;
-        new_mut_node->subclone_count = 0;
-        new_mut_node->cell_count = 1;
-        new_mut_node->allele_count = 0;
-        new_mut_node->clone_time = curr_time + next_time;
-        new_mut_node->mut_count = pnode->mut_count + 1;
-        new_mut_node->is_driver = false;
-        // Update parent subclones
-        pnode->subclone_count = pnode->subclone_count + 1;
-
-        // update rates
-        // generation of punctuated number of mutations
-        double rand_punct = gsl_ran_flat(gp.rng, 0, 1);
-        double rand_advantage = 0;
-        if(rand_punct < punct_params.punctuated_prob)
-        {
-          number_mutations = GeneratePunctuation(punct_params);
-          rand_advantage = gsl_ran_flat(gp.rng, 0, 1);
-        }
-
-        // updating time-dependent parameters
-        new_mut_node->birth_params = pnode->birth_params;
-        new_mut_node->death_params = pnode->death_params;
-
-        bool did_count_driver = false;
-        // generation of additive rate to the fitness
-        if(fit_params.is_randfitness)
-        {
-          double additional_rate = GenerateFitness(fit_params);
-          if (additional_rate > 0)
-          {
-            new_mut_node->driver_count++;
-            did_count_driver = true;
-            new_mut_node->is_driver = true;
-            if(rand_punct < punct_params.punctuated_prob)
-            {
-              additional_rate = additional_rate * punct_params.punctuated_multiplier;
-              // the additional rate can go to the birth or the death rate
-              if( rand_advantage < punct_params.punctuated_advantageous_prob )
-              {
-                new_mut_node->birth_params.rate = fmax(0, additional_rate + new_mut_node->birth_params.rate);
-              }
-              else
-              {
-                new_mut_node->death_params.rate = fmax(0, additional_rate + new_mut_node->death_params.rate);
-              }
-            }
-          }
-        }
-
-        if(mut_params.is_mutator)
-        {
-          double additional_mut_prob = GenerateMutationProb(mut_params);
-          if(additional_mut_prob > 0)
-          {
-            if(!did_count_driver) new_mut_node->driver_count++;
-            new_mut_node->is_driver = true;
-          }
-          new_mut_node->mut_prob = fmin(1, pnode->mut_prob + additional_mut_prob);
-        }
-        else
-        {
-          new_mut_node->mut_prob = pnode->mut_prob;
-        }
-
-        (new_mut_node->B).function = func_array[new_mut_node->birth_params.type];
-        (new_mut_node->B).params = &(new_mut_node->birth_params);
-        (new_mut_node->D).function = func_array[new_mut_node->death_params.type];
-        (new_mut_node->D).params = &(new_mut_node->death_params);
-        // end of update rates
-
-        // Reset birth and death rates (recalc at beginning of next AdvanceState)
-        new_mut_node->birth_rate = 0;
-        new_mut_node->death_rate = 0;
-
-        cl.tot_rate_homog = cl.tot_rate_homog + new_mut_node->birth_params.rate * gp.B_max +
-          new_mut_node->death_params.rate * gp.D_max;
-
-        cl.tot_cell_count++;
-        cl.num_clones++;
-        cl.num_mutations = cl.num_mutations + number_mutations;
-
-        cl.currnode = pnode;
-        pnode = new_mut_node;
-        cl.InsertNode(pnode, number_mutations);
-        if(gp.count_alleles) cl.ChangeAncestorAllele(pnode, true);
-      }
-      else
-      {
-        pnode->cell_count++;
-        cl.tot_cell_count++;
-        if(gp.count_alleles) cl.ChangeAncestorAllele(pnode, true);
-        // Add to homogeneous process that undergoes thinning
-        cl.tot_rate_homog = cl.tot_rate_homog + pnode->birth_params.rate * gp.B_max +
-          pnode->death_params.rate * gp.D_max;
-      }
-
-      // Reprioritize clone based on size by moving to left
-      cl.CloneSort(pnode, true);
-
-      flag = true;
-      break;
-
+      new_clone->driver_count++;
+      did_count_driver = true;
+      new_clone->is_driver = true;
     }
-
-    if(rand_next_event <= summand + (pnode->cell_count) * ((pnode->birth_rate) + (pnode->death_rate)) )
-    {
-      // Death occurs
-      pnode->cell_count = pnode->cell_count - 1;
-      cl.tot_cell_count = cl.tot_cell_count - 1;
-      if(gp.count_alleles) cl.ChangeAncestorAllele(pnode, false);
-      cl.tot_rate_homog = cl.tot_rate_homog - pnode->birth_params.rate * gp.B_max -
-        pnode->death_params.rate * gp.D_max;
-
-      // Clean up of clones with zero to speed up later runs
-      if(pnode->cell_count == 0)
-      {
-        // remove pnode by attaching it to deadlist
-        cl.CutNodeOut(pnode);
-        flag = true;
-        break;
-      }
-
-      // sort by moving to the right until fits
-      cl.CloneSort(pnode, false);
-      flag = true;
-      break;
-    }
-
-    summand = summand + (pnode->cell_count) * ((pnode->birth_rate + pnode->death_rate));
-    pnode = pnode->nextnode;
-
+    new_clone->birth_params.rate = fmax(0, additional_rate + new_clone->birth_params.rate);
   }
 
-  if (!flag)
+  if(mut_params.is_mutator)
   {
-    std::cout << "error: step not completed" << "\n";
-    exit(0);
+    double additional_mut_prob = GenerateMutationProb(mut_params);
+    if(additional_mut_prob > 0)
+    {
+      if(!did_count_driver) new_clone->driver_count++;
+      new_clone->is_driver = true;
+    }
+    new_clone->mut_prob = fmin(1, parent_clone->mut_prob + additional_mut_prob);
   }
+  else
+  {
+    new_clone->mut_prob = parent_clone->mut_prob;
+  }
+
+  (new_clone->B).function = func_array[new_clone->birth_params.type];
+  (new_clone->D).function = func_array[new_clone->death_params.type];
+  (new_clone->B).params = &(new_clone->birth_params);
+  (new_clone->D).params = &(new_clone->death_params);
+
+  cl.InsertNode(new_clone, 1);
 }
 
-void CloneList::AdvanceStateEpi::operator()(double curr_time, double next_time)
+void CloneList::NewClonePunct::operator()(struct clone *new_clone, struct clone *parent_clone)
 {
-  double summand = 0;
-  struct clone *pnode;
-  cl.tot_rate_integ = 0;
-  bool flag = false;
+  // generation of punctuated number of mutations
+  int number_mutations = 1;
 
-  pnode = cl.root;
-  // Collect total rates over time between last and next event
-  while(pnode)
+  double rand_punct = gsl_ran_flat(gp.rng, 0, 1);
+  double rand_advantage = 0;
+  if(rand_punct < punct_params.punctuated_prob)
   {
-    // integrals for determining next clone
-    gsl_integration_qags(&(pnode->B), curr_time, curr_time + next_time,
-      0, 1e-12, 1000, workspace, &(cl.int_result_b), &(cl.int_error_b));
-    pnode->birth_rate = cl.int_result_b;
-    gp.tot_error = gp.tot_error + cl.int_error_b;
-
-    gsl_integration_qags(&(pnode->D), curr_time, curr_time + next_time,
-      0, 1e-12, 1000, workspace, &(cl.int_result_d), &(cl.int_error_d));
-    pnode->death_rate = cl.int_result_d;
-    gp.tot_error = gp.tot_error + cl.int_error_d;
-
-
-    cl.tot_rate_integ = cl.tot_rate_integ + (pnode->birth_rate + pnode->death_rate) * pnode->cell_count;
-    pnode = pnode->nextnode;
+    number_mutations = GeneratePunctuation(punct_params);
+    rand_advantage = gsl_ran_flat(gp.rng, 0, 1);
   }
 
-  double rand_next_event = gsl_ran_flat(gp.rng, 0, cl.tot_rate_integ);
-  double rand_mut_occur;
-  // Put pnode back to the root
-  pnode = cl.root;
+  // updating time-dependent parameters
+  new_clone->birth_params = parent_clone->birth_params;
+  new_clone->death_params = parent_clone->death_params;
 
-  while ( (pnode) && !(flag) )
+  bool did_count_driver = false;
+  // generation of additive rate to the fitness
+  if(fit_params.is_randfitness)
   {
-    if ( rand_next_event <= summand + (pnode->cell_count) * (pnode->birth_rate) )
+    double additional_rate = GenerateFitness(fit_params);
+    if (additional_rate > 0)
     {
-      rand_mut_occur = gsl_ran_flat(gp.rng, 0, 1);
-
-      if (rand_mut_occur <= pnode->mut_prob)
+      new_clone->driver_count++;
+      did_count_driver = true;
+      new_clone->is_driver = true;
+      if(rand_punct < punct_params.punctuated_prob)
       {
-        // Creation of new clone
-        struct clone *new_mut_node;
-        new_mut_node = new struct clone;
-        new_mut_node->clone_id = pnode->clone_id;
-        new_mut_node->driver_count = pnode->driver_count;
-        new_mut_node->subclone_count = 0;
-        new_mut_node->cell_count = 1;
-        new_mut_node->allele_count = 0;
-        new_mut_node->clone_time = curr_time + next_time;
-        new_mut_node->mut_count = pnode->mut_count + 1;
-        new_mut_node->is_driver = false;
-        // Update parent subclones
-        pnode->subclone_count = pnode->subclone_count + 1;
-
-        // update rates
-        // updating time-dependent parameters
-        new_mut_node->birth_params = pnode->birth_params;
-        new_mut_node->death_params = pnode->death_params;
-
-        bool did_count_driver = false;
-        // generation of additive rate to the fitness
-        if(fit_params.is_randfitness)
+        additional_rate = additional_rate * punct_params.punctuated_multiplier;
+        // the additional rate can go to the birth or the death rate
+        if( rand_advantage < punct_params.punctuated_advantageous_prob )
         {
-          double additional_rate = GenerateFitness(fit_params);
-          if (additional_rate > 0)
-          {
-            new_mut_node->driver_count++;
-            did_count_driver = true;
-            new_mut_node->is_driver = true;
-            if(new_mut_node->mut_count == epi_params.epistatic_mutation_thresh)
-            {
-              additional_rate = additional_rate * epi_params.epistatic_multiplier;
-            }
-            new_mut_node->birth_params.rate = fmax(0, additional_rate + new_mut_node->birth_params.rate);
-          }
-        }
-
-        if(mut_params.is_mutator)
-        {
-          double additional_mut_prob = GenerateMutationProb(mut_params);
-          if(additional_mut_prob > 0)
-          {
-            if(!did_count_driver) new_mut_node->driver_count++;
-            new_mut_node->is_driver = true;
-          }
-          new_mut_node->mut_prob = fmin(1, pnode->mut_prob + additional_mut_prob);
+          new_clone->birth_params.rate = fmax(0, additional_rate + new_clone->birth_params.rate);
         }
         else
         {
-          new_mut_node->mut_prob = pnode->mut_prob;
+          new_clone->death_params.rate = fmax(0, additional_rate + new_clone->death_params.rate);
         }
-
-        (new_mut_node->B).function = func_array[new_mut_node->birth_params.type];
-        (new_mut_node->B).params = &(new_mut_node->birth_params);
-        (new_mut_node->D).function = func_array[new_mut_node->death_params.type];
-        (new_mut_node->D).params = &(new_mut_node->death_params);
-        // end of update rates
-
-        // Reset birth and death rates (recalc at beginning of next AdvanceState)
-        new_mut_node->birth_rate = 0;
-        new_mut_node->death_rate = 0;
-
-        cl.tot_rate_homog = cl.tot_rate_homog + new_mut_node->birth_params.rate * gp.B_max +
-          new_mut_node->death_params.rate * gp.D_max;
-
-        cl.tot_cell_count++;
-        cl.num_clones++;
-        cl.num_mutations++;
-
-        cl.currnode = pnode;
-        pnode = new_mut_node;
-        cl.InsertNode(pnode, 1);
-        if(gp.count_alleles) cl.ChangeAncestorAllele(pnode, true);
       }
-      else
-      {
-        pnode->cell_count++;
-        cl.tot_cell_count++;
-        if(gp.count_alleles) cl.ChangeAncestorAllele(pnode, true);
-        // Add to homogeneous process that undergoes thinning
-        cl.tot_rate_homog = cl.tot_rate_homog + pnode->birth_params.rate * gp.B_max +
-          pnode->death_params.rate * gp.D_max;
-      }
-
-      // Reprioritize clone based on size by moving to left
-      cl.CloneSort(pnode, true);
-
-      flag = true;
-      break;
-
     }
-
-    if(rand_next_event <= summand + (pnode->cell_count) * ((pnode->birth_rate) + (pnode->death_rate)) )
-    {
-      // Death occurs
-      pnode->cell_count = pnode->cell_count - 1;
-      cl.tot_cell_count = cl.tot_cell_count - 1;
-      if(gp.count_alleles) cl.ChangeAncestorAllele(pnode, false);
-      cl.tot_rate_homog = cl.tot_rate_homog - pnode->birth_params.rate * gp.B_max -
-        pnode->death_params.rate * gp.D_max;
-
-      // Clean up of clones with zero to speed up later runs
-      if(pnode->cell_count == 0)
-      {
-        // remove pnode by attaching it to deadlist
-        cl.CutNodeOut(pnode);
-        flag = true;
-        break;
-      }
-
-      // sort by moving to the right until fits
-      cl.CloneSort(pnode, false);
-      flag = true;
-      break;
-    }
-
-    summand = summand + (pnode->cell_count) * ((pnode->birth_rate + pnode->death_rate));
-    pnode = pnode->nextnode;
-
   }
 
-  if (!flag)
+  if(mut_params.is_mutator)
   {
-    std::cout << "error: step not completed" << "\n";
-    exit(0);
+    double additional_mut_prob = GenerateMutationProb(mut_params);
+    if(additional_mut_prob > 0)
+    {
+      if(!did_count_driver) new_clone->driver_count++;
+      new_clone->is_driver = true;
+    }
+    new_clone->mut_prob = fmin(1, parent_clone->mut_prob + additional_mut_prob);
   }
+  else
+  {
+    new_clone->mut_prob = parent_clone->mut_prob;
+  }
+
+  (new_clone->B).function = func_array[new_clone->birth_params.type];
+  (new_clone->B).params = &(new_clone->birth_params);
+  (new_clone->D).function = func_array[new_clone->death_params.type];
+  (new_clone->D).params = &(new_clone->death_params);
+  // end of update rates
+
+  cl.InsertNode(new_clone, number_mutations);
+}
+
+void CloneList::NewCloneEpi::operator()(struct clone *new_clone, struct clone *parent_clone)
+{
+  // updating time-dependent parameters
+  new_clone->birth_params = parent_clone->birth_params;
+  new_clone->death_params = parent_clone->death_params;
+
+  bool did_count_driver = false;
+  // generation of additive rate to the fitness
+  if(fit_params.is_randfitness)
+  {
+    double additional_rate = GenerateFitness(fit_params);
+    if (additional_rate > 0)
+    {
+      new_clone->driver_count++;
+      did_count_driver = true;
+      new_clone->is_driver = true;
+      if(new_clone->mut_count == epi_params.epistatic_mutation_thresh)
+      {
+        additional_rate = additional_rate * epi_params.epistatic_multiplier;
+      }
+      new_clone->birth_params.rate = fmax(0, additional_rate + new_clone->birth_params.rate);
+    }
+  }
+
+  if(mut_params.is_mutator)
+  {
+    double additional_mut_prob = GenerateMutationProb(mut_params);
+    if(additional_mut_prob > 0)
+    {
+      if(!did_count_driver) new_clone->driver_count++;
+      new_clone->is_driver = true;
+    }
+    new_clone->mut_prob = fmin(1, parent_clone->mut_prob + additional_mut_prob);
+  }
+  else
+  {
+    new_clone->mut_prob = parent_clone->mut_prob;
+  }
+
+  (new_clone->B).function = func_array[new_clone->birth_params.type];
+  (new_clone->B).params = &(new_clone->birth_params);
+  (new_clone->D).function = func_array[new_clone->death_params.type];
+  (new_clone->D).params = &(new_clone->death_params);
+  // end of update rates
+
+  cl.InsertNode(new_clone, 1);
+}
+
+void CloneList::NewCloneCustom::operator()(struct clone *new_clone, struct clone *parent_clone)
+{
+  cl.InsertNode(new_clone, 1);
 }
 
 /*

@@ -243,10 +243,8 @@ void CloneList::AdvanceState(double curr_time, double next_time)
         new_mut_node->birth_rate = pnode->birth_rate;
         new_mut_node->death_rate = pnode->death_rate;
 
-        // updating rate parameters
+        // Function class to add any modifications to rates and insert clone
         (*NewClone)(new_mut_node, pnode);
-        // end of rate parameter update
-
 
         tot_rate = tot_rate + new_mut_node->birth_rate + new_mut_node->death_rate;
         tot_cell_count++;
