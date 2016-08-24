@@ -12,6 +12,8 @@
 #include "parameterlist.h"
 
 GlobalParameters gp;
+// Pointer to Function class which will point to an instance of one based on parameters
+CloneList::NewCloneFunction* NewClone;
 
 int main(int argc, char *argv[])
 {
@@ -226,9 +228,6 @@ int main(int argc, char *argv[])
   double rand_next_time;
   int count_extinct = 0;
 
-  // Pointer to Function class which will point to an instance of one based on parameters
-  CloneList::AdvanceStateFunction* AdvanceState;
-
   for (int sim = 1; sim <= gp.num_sims; sim++)
   {
     // initialize time to zero
@@ -244,22 +243,26 @@ int main(int argc, char *argv[])
     // Determine Advance function class to use based on the parameters
     if( punct_params.is_punctuated )
     {
-      AdvanceState = new CloneList::AdvanceStatePunct(population, fit_params, mut_params, punct_params);
+      NewClone = new CloneList::NewClonePunct(population, fit_params, mut_params, punct_params);
     }
     else if( fit_params.is_randfitness || mut_params.is_mutator )
     {
       if ( epi_params.is_epistasis )
       {
-        AdvanceState = new CloneList::AdvanceStateEpi(population, fit_params, mut_params, epi_params);
+        NewClone = new CloneList::NewCloneEpi(population, fit_params, mut_params, epi_params);
       }
       else
       {
-        AdvanceState = new CloneList::AdvanceStateFitMut(population, fit_params, mut_params);
+        NewClone = new CloneList::NewCloneFitMut(population, fit_params, mut_params);
       }
     }
-    else
+    else /*if (gp.is_custom_model)
     {
-      AdvanceState = new CloneList::AdvanceStateNoParams(population);
+      NewClone = new CloneList::NewCloneCustom(popoulation);
+    }
+    else*/
+    {
+      NewClone = new CloneList::NewCloneNoParams(population);
     }
 
     if( ancestor_file == NULL )
@@ -365,7 +368,7 @@ int main(int argc, char *argv[])
       rand_next_time = population.AdvanceTime(current_time);
 
       // Advance Simulation State (choose next event)
-      (*AdvanceState)(current_time, rand_next_time);
+      population.AdvanceState(current_time, rand_next_time);
 
       // update current_time
       current_time = current_time + rand_next_time;
@@ -431,7 +434,7 @@ int main(int argc, char *argv[])
   //avg_sim_endtime = avg_sim_endtime * (double)gp.num_sims / (double)count_detect;
 
   gsl_rng_free(gp.rng);
-  delete AdvanceState;
+  delete NewClone;
 
   sim_stats << "avg_sim_endtime, " << avg_sim_endtime << "\n" <<
                "count_detect, " << count_detect << "\n" <<

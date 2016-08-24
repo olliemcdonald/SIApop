@@ -32,73 +32,85 @@ public:
   void init();
 
   // Abstract base class of functions
-  class AdvanceStateFunction
+  class NewCloneFunction
   {
   public:
-    AdvanceStateFunction() {};
-    virtual ~AdvanceStateFunction() {};
-    virtual void operator()(double curr_time, double next_time) = 0;
+    NewCloneFunction() {};
+    virtual ~NewCloneFunction() {};
+    virtual void operator()(struct clone *new_clone, struct clone *parent_clone) = 0;
   };
 
-  class AdvanceStateNoParams : public AdvanceStateFunction
+  class NewCloneNoParams : public NewCloneFunction
   {
   public:
-    AdvanceStateNoParams(CloneList& cl_) : cl(cl_)
+    NewCloneNoParams(CloneList& cl_) : cl(cl_)
     {
     }
-    ~AdvanceStateNoParams(){};
+    ~NewCloneNoParams(){};
     CloneList& cl;
-    void operator()(double curr_time, double next_time);
+    void operator()(struct clone *new_clone, struct clone *parent_clone);
   };
 
-  class AdvanceStateFitMut : public AdvanceStateFunction
+  class NewCloneFitMut : public NewCloneFunction
   {
   public:
-    AdvanceStateFitMut(CloneList& cl_, FitnessParameters fit_params_, MutationParameters mut_params_) : cl(cl_),fit_params(fit_params_),mut_params(mut_params_)
+    NewCloneFitMut(CloneList& cl_, FitnessParameters fit_params_, MutationParameters mut_params_) : cl(cl_),fit_params(fit_params_),mut_params(mut_params_)
     {
     }
-    ~AdvanceStateFitMut(){};
+    ~NewCloneFitMut(){};
     CloneList& cl;
-    void operator()(double curr_time, double next_time);
+    void operator()(struct clone *new_clone, struct clone *parent_clone);
   private:
     FitnessParameters fit_params;
     MutationParameters mut_params;
   };
 
-  class AdvanceStatePunct : public AdvanceStateFunction
+  class NewClonePunct : public NewCloneFunction
   {
   public:
-    AdvanceStatePunct(CloneList& cl_, FitnessParameters fit_params_,
+    NewClonePunct(CloneList& cl_, FitnessParameters fit_params_,
       MutationParameters mut_params_, PunctuationParameters punct_params_) : cl(cl_),fit_params(fit_params_),mut_params(mut_params_),punct_params(punct_params_)
     {
     }
-    ~AdvanceStatePunct(){};
+    ~NewClonePunct(){};
     CloneList& cl;
-    void operator()(double curr_time, double next_time);
+    void operator()(struct clone *new_clone, struct clone *parent_clone);
   private:
     FitnessParameters fit_params;
     MutationParameters mut_params;
     PunctuationParameters punct_params;
   };
 
-  class AdvanceStateEpi : public AdvanceStateFunction
+  class NewCloneEpi : public NewCloneFunction
   {
   public:
-    AdvanceStateEpi(CloneList& cl_, FitnessParameters fit_params_,
+    NewCloneEpi(CloneList& cl_, FitnessParameters fit_params_,
       MutationParameters mut_params_, EpistaticParameters epi_params_) : cl(cl_),fit_params(fit_params_),mut_params(mut_params_),epi_params(epi_params_)
     {
     }
-    ~AdvanceStateEpi(){};
+    ~NewCloneEpi(){};
     CloneList& cl;
-    void operator()(double curr_time, double next_time);
+    void operator()(struct clone *new_clone, struct clone *parent_clone);
   private:
     FitnessParameters fit_params;
     MutationParameters mut_params;
     EpistaticParameters epi_params;
   };
 
+  class NewCloneCustom : public NewCloneFunction
+  {
+  public:
+    NewCloneCustom(CloneList& cl_) : cl(cl_)
+    {
+    }
+    ~NewCloneCustom(){};
+    CloneList& cl;
+    void operator()(struct clone *new_clone, struct clone *parent_clone);
+  };
+
   // Next Step Functions
   double AdvanceTime(double curr_time);
+  void AdvanceState(double curr_time, double next_time);
   void InsertNode(clone* newnode, int number_mutations);
   void InsertAncestor(clone* ancestor);
 
@@ -115,5 +127,8 @@ public:
   void SampleAndTraverse(std::ofstream &F, int run, int sample_size, int nsamples);
   void DeleteList();
 };
+
+extern CloneList::NewCloneFunction* NewClone;
+
 
 #endif // __CLONELIST_H_INCLUDED__

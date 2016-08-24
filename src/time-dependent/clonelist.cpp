@@ -274,7 +274,6 @@ void CloneList::AdvanceStateNoParams::operator()(double curr_time, double next_t
         // Creation of new clone
         struct clone *new_mut_node;
         new_mut_node = new struct clone;
-
         new_mut_node->clone_id = pnode->clone_id;
         new_mut_node->driver_count = pnode->driver_count;
         new_mut_node->subclone_count = 0;
@@ -283,12 +282,11 @@ void CloneList::AdvanceStateNoParams::operator()(double curr_time, double next_t
         new_mut_node->clone_time = curr_time + next_time;
         new_mut_node->mut_count = pnode->mut_count + 1;
         new_mut_node->is_driver = false;
-
         // Update parent subclones
         pnode->subclone_count = pnode->subclone_count + 1;
 
+        // update rates
         new_mut_node->mut_prob = pnode->mut_prob;
-
         // updating time-dependent parameters
         new_mut_node->birth_params = pnode->birth_params;
         new_mut_node->death_params = pnode->death_params;
@@ -296,6 +294,7 @@ void CloneList::AdvanceStateNoParams::operator()(double curr_time, double next_t
         (new_mut_node->B).params = &(new_mut_node->birth_params);
         (new_mut_node->D).function = func_array[new_mut_node->death_params.type];
         (new_mut_node->D).params = &(new_mut_node->death_params);
+        // end of update rates
 
         // Reset birth and death rates (recalc at beginning of next AdvanceState)
         new_mut_node->birth_rate = 0;
@@ -420,7 +419,7 @@ void CloneList::AdvanceStateFitMut::operator()(double curr_time, double next_tim
         // Update parent subclones
         pnode->subclone_count = pnode->subclone_count + 1;
 
-
+        // update rates
         // updating time-dependent parameters
         new_mut_node->birth_params = pnode->birth_params;
         new_mut_node->death_params = pnode->death_params;
@@ -459,7 +458,7 @@ void CloneList::AdvanceStateFitMut::operator()(double curr_time, double next_tim
         (new_mut_node->D).function = func_array[new_mut_node->death_params.type];
         (new_mut_node->B).params = &(new_mut_node->birth_params);
         (new_mut_node->D).params = &(new_mut_node->death_params);
-
+        // end of update rates
 
         // Reset birth and death rates (recalc at beginning of next AdvanceState)
         new_mut_node->birth_rate = 0;
@@ -587,6 +586,7 @@ void CloneList::AdvanceStatePunct::operator()(double curr_time, double next_time
         // Update parent subclones
         pnode->subclone_count = pnode->subclone_count + 1;
 
+        // update rates
         // generation of punctuated number of mutations
         double rand_punct = gsl_ran_flat(gp.rng, 0, 1);
         double rand_advantage = 0;
@@ -645,6 +645,7 @@ void CloneList::AdvanceStatePunct::operator()(double curr_time, double next_time
         (new_mut_node->B).params = &(new_mut_node->birth_params);
         (new_mut_node->D).function = func_array[new_mut_node->death_params.type];
         (new_mut_node->D).params = &(new_mut_node->death_params);
+        // end of update rates
 
         // Reset birth and death rates (recalc at beginning of next AdvanceState)
         new_mut_node->birth_rate = 0;
@@ -719,7 +720,6 @@ void CloneList::AdvanceStatePunct::operator()(double curr_time, double next_time
 void CloneList::AdvanceStateEpi::operator()(double curr_time, double next_time)
 {
   double summand = 0;
-
   struct clone *pnode;
   cl.tot_rate_integ = 0;
   bool flag = false;
@@ -771,7 +771,7 @@ void CloneList::AdvanceStateEpi::operator()(double curr_time, double next_time)
         // Update parent subclones
         pnode->subclone_count = pnode->subclone_count + 1;
 
-
+        // update rates
         // updating time-dependent parameters
         new_mut_node->birth_params = pnode->birth_params;
         new_mut_node->death_params = pnode->death_params;
@@ -813,6 +813,7 @@ void CloneList::AdvanceStateEpi::operator()(double curr_time, double next_time)
         (new_mut_node->B).params = &(new_mut_node->birth_params);
         (new_mut_node->D).function = func_array[new_mut_node->death_params.type];
         (new_mut_node->D).params = &(new_mut_node->death_params);
+        // end of update rates
 
         // Reset birth and death rates (recalc at beginning of next AdvanceState)
         new_mut_node->birth_rate = 0;
