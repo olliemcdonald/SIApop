@@ -29,7 +29,8 @@ struct GlobalParameters
 
 
 // Clone Structure and Linked List Class containing list of clones
-struct clone{
+struct clone
+{
   std::string clone_id;
   int subclone_count;
   int cell_count;

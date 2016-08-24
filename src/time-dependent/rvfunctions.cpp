@@ -10,14 +10,12 @@ double GenerateFitness(FitnessParameters fit_params)
   if( (z > fit_params.pass_prob) &&
     ((fit_params.beta_fitness == 0) || z <= fit_params.pass_prob + (1 - fit_params.pass_prob) / 2) )
   {
-
     fitness = gsl_ran_exponential(gp.rng, 1 / fit_params.alpha_fitness);
     return fitness;
 
   }
   else if( (fit_params.alpha_fitness == 0) || (z > fit_params.pass_prob + (1 - fit_params.pass_prob) / 2) )
   {
-
     fitness = -1 * gsl_ran_exponential(gp.rng, 1 / fit_params.beta_fitness);
     return fitness;
 
@@ -28,7 +26,6 @@ double GenerateFitness(FitnessParameters fit_params)
     fitness = 0.0;
     return fitness;
   }
-
 }
 
 // Function for generating the mutation probability from a beta distribution

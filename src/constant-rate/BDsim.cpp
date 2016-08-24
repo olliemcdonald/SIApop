@@ -15,7 +15,6 @@ GlobalParameters gp;
 
 int main(int argc, char *argv[])
 {
-
   auto t1 = std::chrono::high_resolution_clock::now();
 
   gp.rng = gsl_rng_alloc(gsl_rng_mt19937);
@@ -32,7 +31,8 @@ int main(int argc, char *argv[])
 
   for (int i = 1; i < argc; i++)
   {
-    if (i + 1 != argc){ // Check that we haven't finished parsing arguments
+    if (i + 1 != argc)
+    { // Check that we haven't finished parsing arguments
         if (strcmp(argv[i], "-in") == 0) // input file
         {
           input_params = argv[i + 1];
@@ -99,7 +99,8 @@ int main(int argc, char *argv[])
   if (observation_times.size() == 0)
   {
     int num_obs =  ceil(gp.tot_life / gp.observation_frequency);
-    for (int i = 1; i <= num_obs; i++){
+    for (int i = 1; i <= num_obs; i++)
+    {
       observation_times.push_back(i * gp.observation_frequency);
     }
   }
@@ -261,10 +262,9 @@ int main(int argc, char *argv[])
       AdvanceState = new CloneList::AdvanceStateNoParams(population);
     }
 
-    if( ancestor_file == NULL ){
-
+    if( ancestor_file == NULL )
+    {
       population.tot_rate = (gp.birth_rate + gp.death_rate) * gp.ancestors * gp.ancestor_clones;
-
       population.tot_cell_count = gp.ancestors * gp.ancestor_clones;
 
       for(int ance__clone_count = 1; ance__clone_count <= gp.ancestor_clones; ance__clone_count++)
@@ -306,7 +306,8 @@ int main(int argc, char *argv[])
         getline(ancfile, a);
         std::istringstream ss( a );
         std::string s2;
-        while(ss >> s2){
+        while(ss >> s2)
+        {
           ancestor_keys.push_back(s2);
         }
 
@@ -385,7 +386,8 @@ int main(int argc, char *argv[])
       }
 
       /*
-      if((population.tot_cell_count % 50000) == 0){
+      if((population.tot_cell_count % 50000) == 0)
+      {
         std::cout << "Time: " << current_time << "\t size: " << population.tot_cell_count << "\n";
       }
       //*/

@@ -17,11 +17,11 @@ RateFunctionsPtr func_array[] = {&RateFunctions::constant, &RateFunctions::linea
 gsl_integration_workspace *workspace = gsl_integration_workspace_alloc(1000);
 
 
-int main(int argc, char *argv[]){
-
+int main(int argc, char *argv[])
+{
   auto t1 = std::chrono::high_resolution_clock::now();
-  gp.tot_error = 0;
 
+  gp.tot_error = 0;
   gp.rng = gsl_rng_alloc(gsl_rng_mt19937);
   gp.seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
 
@@ -35,7 +35,8 @@ int main(int argc, char *argv[]){
   const char *output_folder = "./";
 
   for (int i = 1; i < argc; i++) {
-    if (i + 1 != argc){ // Check that we haven't finished parsing arguments
+    if (i + 1 != argc)
+    { // Check that we haven't finished parsing arguments
         if (strcmp(argv[i], "-in") == 0) { // input file
           input_params = argv[i + 1];
         } else if (strcmp(argv[i], "-out") == 0) { // output file
@@ -99,7 +100,8 @@ int main(int argc, char *argv[]){
   if (observation_times.size() == 0)
   {
     int num_obs =  ceil(gp.tot_life / gp.observation_frequency);
-    for (int i = 1; i <= num_obs; i++){
+    for (int i = 1; i <= num_obs; i++)
+    {
       observation_times.push_back(i * gp.observation_frequency);
     }
   }
@@ -336,7 +338,8 @@ int main(int argc, char *argv[]){
         getline(ancfile, a);
         std::istringstream ss( a );
         std::string s2;
-        while(ss >> s2){
+        while(ss >> s2)
+        {
           ancestor_keys.push_back(s2);
         }
 
@@ -467,7 +470,8 @@ int main(int argc, char *argv[]){
       }
 
       /*
-      if((population.tot_cell_count % 50000) == 0){
+      if((population.tot_cell_count % 50000) == 0)
+      {
         std::cout << "Time: " << current_time << "\t size: " << population.tot_cell_count << "\n";
       }
       //*/

@@ -34,7 +34,10 @@ public:
   int tot_cell_count;
   double int_result_b, int_error_b, int_result_d, int_error_d;
 
-  CloneList() { init(); };
+  CloneList()
+  {
+    init();
+  };
   void init();
 
   // Abstract base class of functions

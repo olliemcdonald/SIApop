@@ -7,7 +7,8 @@
 #include <gsl/gsl_math.h>
 
 
-class RateFunctions {
+class RateFunctions
+{
 public:
   static double constant(double t, void *params);
   static double linear(double t, void *params);

@@ -1,7 +1,8 @@
 #include "clonelist.h"
 
 // Constructor
-void CloneList::init(){
+void CloneList::init()
+{
     root = NULL;
     currnode = NULL;
     deadroot = NULL;
@@ -21,14 +22,12 @@ void CloneList::InsertNode(clone* newnode, int number_mutations)
 
   if( root == NULL )
   {
-
     newnode->nextnode = NULL;
     newnode->parent = NULL;
     newnode->prevnode = NULL;
 
     root = newnode;
     currnode = newnode;
-
   }
   else
   {
@@ -70,11 +69,12 @@ void CloneList::InsertNode(clone* newnode, int number_mutations)
 */
 void CloneList::InsertAncestor(clone* ancestor)
 {
-
-  if( ancestor->clone_id.empty() ){
+  if( ancestor->clone_id.empty() )
+  {
     num_clones++;
     ancestor->clone_id = std::to_string(num_clones) + ".a";
-  } else{
+  } else
+  {
     ancestor->clone_id = ancestor->clone_id + ".a";
   }
 
@@ -83,15 +83,12 @@ void CloneList::InsertAncestor(clone* ancestor)
 
   if( root == NULL )
   {
-
     ancestor->prevnode = NULL;
     root = ancestor;
     currnode = ancestor;
-
   }
   else
   {
-
     while (currnode->nextnode != NULL)
     {
       currnode = currnode->nextnode;
@@ -112,7 +109,6 @@ void CloneList::InsertAncestor(clone* ancestor)
 */
 void CloneList::ChangeAncestorAllele(clone* thisnode, bool add_daughter)
 {
-
   if(add_daughter) // if added a daughter add to each allele_count
   {
     while(thisnode != NULL)
@@ -141,7 +137,6 @@ void CloneList::ChangeAncestorAllele(clone* thisnode, bool add_daughter)
 */
 void CloneList::CloneSort(clone* sortnode, bool is_birth)
 {
-
   if(is_birth && sortnode->prevnode != NULL)
   {
     if( sortnode->cell_count * (sortnode->birth_rate + sortnode->death_rate) >=
@@ -165,7 +160,8 @@ void CloneList::CloneSort(clone* sortnode, bool is_birth)
       if(newprevnode != NULL)
       {
         newprevnode->nextnode = sortnode;
-      } else{
+      } else
+      {
         // reroot to the current node
         root = sortnode;
       }
@@ -173,7 +169,6 @@ void CloneList::CloneSort(clone* sortnode, bool is_birth)
     }
   } else if(!is_birth && sortnode->nextnode != NULL)
   {
-
     // move newprevnode to the right
     if( sortnode->cell_count * (sortnode->birth_rate + sortnode->death_rate) <=
       sortnode->nextnode->cell_count  * (sortnode->nextnode->birth_rate + sortnode->nextnode->death_rate) )
@@ -187,7 +182,8 @@ void CloneList::CloneSort(clone* sortnode, bool is_birth)
       if(sortnode->prevnode != NULL)
       {
         sortnode->prevnode->nextnode = sortnode->nextnode;
-      } else{
+      } else
+      {
         root = sortnode->nextnode;
       }
       sortnode->nextnode->prevnode = sortnode->prevnode;
@@ -271,7 +267,6 @@ void CloneList::AdvanceStateNoParams::operator()(double curr_time, double next_t
   {
     if ( rand_next_event <= summand + (pnode->cell_count) * (pnode->birth_rate) )
     {
-
       rand_mut_occur = gsl_ran_flat(gp.rng, 0, 1);
 
       if (rand_mut_occur <= pnode->mut_prob)
@@ -370,12 +365,10 @@ void CloneList::AdvanceStateNoParams::operator()(double curr_time, double next_t
     std::cout << "error: step not completed" << "\n";
     exit(0);
   }
-
 }
 
 void CloneList::AdvanceStateFitMut::operator()(double curr_time, double next_time)
 {
-
   double summand = 0;
   struct clone *pnode;
   cl.tot_rate_integ = 0;
@@ -409,12 +402,10 @@ void CloneList::AdvanceStateFitMut::operator()(double curr_time, double next_tim
   {
     if ( rand_next_event <= summand + (pnode->cell_count) * (pnode->birth_rate) )
     {
-
       rand_mut_occur = gsl_ran_flat(gp.rng, 0, 1);
 
       if (rand_mut_occur <= pnode->mut_prob)
       {
-
         // Creation of new clone
         struct clone *new_mut_node;
         new_mut_node = new struct clone;
@@ -538,7 +529,6 @@ void CloneList::AdvanceStateFitMut::operator()(double curr_time, double next_tim
     std::cout << "error: step not completed" << "\n";
     exit(0);
   }
-
 }
 
 void CloneList::AdvanceStatePunct::operator()(double curr_time, double next_time)
@@ -577,7 +567,6 @@ void CloneList::AdvanceStatePunct::operator()(double curr_time, double next_time
   {
     if ( rand_next_event <= summand + (pnode->cell_count) * (pnode->birth_rate) )
     {
-
       rand_mut_occur = gsl_ran_flat(gp.rng, 0, 1);
 
       if (rand_mut_occur <= pnode->mut_prob)
@@ -613,7 +602,8 @@ void CloneList::AdvanceStatePunct::operator()(double curr_time, double next_time
 
         bool did_count_driver = false;
         // generation of additive rate to the fitness
-        if(fit_params.is_randfitness){
+        if(fit_params.is_randfitness)
+        {
           double additional_rate = GenerateFitness(fit_params);
           if (additional_rate > 0)
           {
@@ -724,7 +714,6 @@ void CloneList::AdvanceStatePunct::operator()(double curr_time, double next_time
     std::cout << "error: step not completed" << "\n";
     exit(0);
   }
-
 }
 
 void CloneList::AdvanceStateEpi::operator()(double curr_time, double next_time)
@@ -764,7 +753,6 @@ void CloneList::AdvanceStateEpi::operator()(double curr_time, double next_time)
   {
     if ( rand_next_event <= summand + (pnode->cell_count) * (pnode->birth_rate) )
     {
-
       rand_mut_occur = gsl_ran_flat(gp.rng, 0, 1);
 
       if (rand_mut_occur <= pnode->mut_prob)
@@ -790,7 +778,8 @@ void CloneList::AdvanceStateEpi::operator()(double curr_time, double next_time)
 
         bool did_count_driver = false;
         // generation of additive rate to the fitness
-        if(fit_params.is_randfitness){
+        if(fit_params.is_randfitness)
+        {
           double additional_rate = GenerateFitness(fit_params);
           if (additional_rate > 0)
           {
@@ -893,7 +882,6 @@ void CloneList::AdvanceStateEpi::operator()(double curr_time, double next_time)
     std::cout << "error: step not completed" << "\n";
     exit(0);
   }
-
 }
 
 /*
@@ -1083,7 +1071,6 @@ void CloneList::SampleAndTraverse(std::ofstream &F, int run, int sample_size, in
       pnode = pnode->nextnode;
     }
   }
-
 }
 
 /*
@@ -1162,21 +1149,18 @@ void CloneList::DeleteNode()
   struct clone *tmpcurrnode;
   tmpcurrnode = currnode;
 
-  if(currnode->nextnode == NULL){
-
+  if(currnode->nextnode == NULL)
+  {
     currnode = currnode->prevnode;
     currnode->nextnode = NULL;
-
   }
   else
   {
-
     struct clone *tmpnextnode;
     tmpnextnode = currnode->nextnode;
     currnode = currnode->prevnode; // set previous node as current
     currnode->nextnode = tmpnextnode; // set the nextnode of the current node to skip over tmpnode
     tmpnextnode->prevnode = currnode;
-
   }
 
   delete tmpcurrnode;

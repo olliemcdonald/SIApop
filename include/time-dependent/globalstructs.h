@@ -46,7 +46,8 @@ struct TimeDependentParameters
 };
 
 // Clone Structure and Linked List Class containing list of clones
-struct clone{
+struct clone
+{
   // clone information
   std::string clone_id;
   int subclone_count;
