@@ -59,9 +59,6 @@ public:
 
   class AdvanceStateFitMut : public AdvanceStateFunction
   {
-  private:
-    FitnessParameters fit_params;
-    MutationParameters mut_params;
   public:
     AdvanceStateFitMut(CloneList& cl_, FitnessParameters fit_params_, MutationParameters mut_params_) : cl(cl_),fit_params(fit_params_),mut_params(mut_params_)
     {
@@ -69,14 +66,13 @@ public:
     ~AdvanceStateFitMut(){};
     CloneList& cl;
     void operator()(double curr_time, double next_time);
+  private:
+    FitnessParameters fit_params;
+    MutationParameters mut_params;
   };
 
   class AdvanceStatePunct : public AdvanceStateFunction
   {
-  private:
-    FitnessParameters fit_params;
-    MutationParameters mut_params;
-    PunctuationParameters punct_params;
   public:
     AdvanceStatePunct(CloneList& cl_, FitnessParameters fit_params_,
       MutationParameters mut_params_, PunctuationParameters punct_params_) : cl(cl_),fit_params(fit_params_),mut_params(mut_params_),punct_params(punct_params_)
@@ -85,14 +81,14 @@ public:
     ~AdvanceStatePunct(){};
     CloneList& cl;
     void operator()(double curr_time, double next_time);
+  private:
+    FitnessParameters fit_params;
+    MutationParameters mut_params;
+    PunctuationParameters punct_params;
   };
 
   class AdvanceStateEpi : public AdvanceStateFunction
   {
-  private:
-    FitnessParameters fit_params;
-    MutationParameters mut_params;
-    EpistaticParameters epi_params;
   public:
     AdvanceStateEpi(CloneList& cl_, FitnessParameters fit_params_,
       MutationParameters mut_params_, EpistaticParameters epi_params_) : cl(cl_),fit_params(fit_params_),mut_params(mut_params_),epi_params(epi_params_)
@@ -101,6 +97,10 @@ public:
     ~AdvanceStateEpi(){};
     CloneList& cl;
     void operator()(double curr_time, double next_time);
+  private:
+    FitnessParameters fit_params;
+    MutationParameters mut_params;
+    EpistaticParameters epi_params;
   };
 
   // Next Step Functions
