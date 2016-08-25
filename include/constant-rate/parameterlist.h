@@ -1,5 +1,21 @@
-//=======================================================
-// include guard
+/*
+ * =====================================================================================
+ *
+ *       Filename:  parameterlist.h
+ *
+ *    Description: Header for class that imports the input file, parses
+ *                 and converts to parameters for the model.
+ *
+ *        Version:  1.0
+ *        Created:  08/24/2016 16:50:27
+ *       Revision:  none
+ *       Compiler:  gcc
+ *
+ *         Author:  Thomas McDonald (), mcdonald@jimmy.harvard.edu
+ *   Organization:  DFCI
+ *
+ * =====================================================================================
+ */
 #ifndef __PARAMETERLIST_H_INCLUDED__
 #define __PARAMETERLIST_H_INCLUDED__
 
@@ -20,12 +36,5 @@ public:
     void splitAndFill(const std::string& s);
 };
 
-template <class T> bool ParameterList::convert(const std::string s, T& result)
-{
-    std::string val = (*this)[s];
-    std::stringstream ss(val);
-    ss >> result;
-    return val.empty();
-}
 
 #endif // __PARAMETERLIST_H_INCLUDED__

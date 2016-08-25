@@ -1,5 +1,21 @@
-//=======================================================
-// include guard
+/*
+ * =====================================================================================
+ *
+ *       Filename:  globalstructs.h
+ *
+ *    Description:  Header for structures that are accessed by multiple classes
+ *                  throughout the simulation
+ *
+ *        Version:  1.0
+ *        Created:  08/24/2016 16:50:27
+ *       Revision:  none
+ *       Compiler:  gcc
+ *
+ *         Author:  Thomas McDonald (), mcdonald@jimmy.harvard.edu
+ *   Organization:  DFCI
+ *
+ * =====================================================================================
+ */
 #ifndef __GLOBALSTRUCTS_TD_H_INCLUDED__
 #define __GLOBALSTRUCTS_TD_H_INCLUDED__
 

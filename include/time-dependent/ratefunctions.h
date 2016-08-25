@@ -1,5 +1,21 @@
-//=======================================================
-// include guard
+/*
+ * =====================================================================================
+ *
+ *       Filename:  rvfunctions.h
+ *
+ *    Description: header for functions for generating random variables
+ *
+ *        Version:  1.0
+ *        Created:  08/24/2016 16:50:27
+ *       Revision:  none
+ *       Compiler:  gcc
+ *
+ *         Author:  Thomas McDonald (), mcdonald@jimmy.harvard.edu
+ *   Organization:  DFCI
+ *
+ * =====================================================================================
+ */
+
 #ifndef __RATEFUNCTIONS_TD_H_INCLUDED__
 #define __RATEFUNCTIONS_TD_H_INCLUDED__
 

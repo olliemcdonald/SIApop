@@ -1,9 +1,11 @@
 /*
  * =====================================================================================
  *
- *       Filename:  test.cpp
+ *       Filename:  clonelist.cpp
  *
- *    Description:
+ *    Description: Contains the class CloneList which creates a linked list
+ *                 of clone structures along with the methods that modify,
+ *                 add, delete, and output clones.
  *
  *        Version:  1.0
  *        Created:  08/24/2016 16:50:27
@@ -15,15 +17,15 @@
  *
  * =====================================================================================
  */
- 
+
 #include "clonelist.h"
 
 // Constructor
 void CloneList::init()
 {
-    root = NULL;
-    deadroot = NULL;
-    currnode = NULL;
+    root = NULL; // node points to first ancestor clone
+    deadroot = NULL; // node points to first extinct clone (to keep track)
+    currnode = NULL; // for moving around the list and keeping track of location
     currdeadnode = NULL;
     num_clones = 0; // number of types
     num_mutations = 0; // number of mutations (types and deadtypes)
@@ -31,12 +33,14 @@ void CloneList::init()
     tot_cell_count = 0; // total number of cells in all types
 }
 
-// InsertNode attaches the newly created node (in AdvanceState) to the end of the list
+// InsertNode attaches the newly created node (in NewClone) to the end of the
+// linked list. Number of mutations was included for the punctuated scenario
+// to add to the ID.
 void CloneList::InsertNode(clone* newnode, int number_mutations)
 {
   num_clones++;
 
-  if( root == NULL )
+  if( root == NULL ) // if linked list not yet rooted (no clones created)
   {
     newnode->nextnode = NULL;
     newnode->parent = NULL;
@@ -44,7 +48,6 @@ void CloneList::InsertNode(clone* newnode, int number_mutations)
 
     root = newnode;
     currnode = newnode;
-
   }
   else
   {
@@ -120,15 +123,16 @@ void CloneList::InsertAncestor(clone* ancestor)
 
 
 /*
-  AddToParent occurs after determining which event occurs. It travels through
-  the ancestry using the parent link in the list to add or subtract a clone's
+  ChangeAncestorAllele occurs after determining which event occurs. It travels
+  through parent pointer sin the list to add or subtract a clone's
   numallele value for each ancestor. This generates a count for the number
   of individuals a particular allele is represented by (allele is the last
-  term of unique_id)
+  term of unique_id). Implemented if count_alleles is TRUE as an input.
+  add_daughter argument is based on whether a birth or death occurred.
 */
 void CloneList::ChangeAncestorAllele(clone* thisnode, bool add_daughter)
 {
-  if(add_daughter) // if added a daughter add to each allele_count
+  if(add_daughter) // if added a daughter then add to each allele_count
   {
     while(thisnode != NULL)
     {
@@ -152,11 +156,14 @@ void CloneList::ChangeAncestorAllele(clone* thisnode, bool add_daughter)
   Method to sort the current node based on the number of cells in it
   relative to its prevnode and nextnode. If death, move toward nextnode
   if birth, move to prevnode direction second argument is true if birth.
+  Method should help speed up later runs when subclones have larger fitness
+  and start to dominate the process.
 */
 void CloneList::CloneSort(clone* sortnode, bool is_birth)
 {
-  if(is_birth && sortnode->prevnode != NULL)
+  if(is_birth && sortnode->prevnode != NULL) // if a birth occurred and not root node
   {
+    // if the rates are greater in node than the previous node, switch them
     if( sortnode->cell_count * (sortnode->birth_rate + sortnode->death_rate) >=
       sortnode->prevnode->cell_count * (sortnode->prevnode->birth_rate + sortnode->prevnode->death_rate) )
     {
@@ -185,9 +192,9 @@ void CloneList::CloneSort(clone* sortnode, bool is_birth)
       }
       newnextnode->prevnode = sortnode;
     }
-  } else if(!is_birth && sortnode->nextnode != NULL)
+  } else if(!is_birth && sortnode->nextnode != NULL) // if death and not final node
   {
-    // move newprevnode to the right
+    // if the rates are greater in node than the previous node, switch them
     if( sortnode->cell_count * (sortnode->birth_rate + sortnode->death_rate) <=
       sortnode->nextnode->cell_count  * (sortnode->nextnode->birth_rate + sortnode->nextnode->death_rate) )
     {
@@ -218,22 +225,32 @@ void CloneList::CloneSort(clone* sortnode, bool is_birth)
   }
 }
 
+/*
+  AdvanceTime determines the next time in the process.
+*/
 double CloneList::AdvanceTime(double curr_time)
 {
   double rand_next_time;
   rand_next_time = gsl_ran_exponential(gp.rng, 1 / tot_rate);
   return rand_next_time;
 }
+
+/*
+  Advance state determines the next event that occurs in the process and which
+  clone it occurs in (birth w/o mutation, birth w/ mutation, death) and updates
+  the process accordingly
+*/
 void CloneList::AdvanceState(double curr_time, double next_time)
 {
   double summand = 0;
   double rand_next_event = gsl_ran_flat(gp.rng, 0, tot_rate);
   double rand_mut_occur;
+  bool flag = false;
 
   struct clone *pnode;
   pnode = root;
-  bool flag = false;
 
+  // cycle through nodes to determine the next event that occurs
   while ( (pnode) && !(flag) )
   {
     // Condition for new birth
@@ -270,10 +287,10 @@ void CloneList::AdvanceState(double curr_time, double next_time)
 
         currnode = pnode;
         pnode = new_mut_node;
-        // add to all allele counts for ancestors
+        // add allele count to all ancestors
         if(gp.count_alleles) ChangeAncestorAllele(pnode, true);
       }
-      else
+      else // no mutation, increment clone by 1
       {
         pnode->cell_count++;
         tot_cell_count++;
@@ -288,12 +305,13 @@ void CloneList::AdvanceState(double curr_time, double next_time)
       break;
 
     }
-
+    // Condition if a death occurs
     if(rand_next_event <= summand + (pnode->cell_count) * ((pnode->birth_rate) + (pnode->death_rate)) )
     {
       // Death occurs
       pnode->cell_count = pnode->cell_count - 1;
       tot_cell_count = tot_cell_count - 1;
+      // decrease allele count in ancestors
       if(gp.count_alleles) ChangeAncestorAllele(pnode, false);
       tot_rate = tot_rate - pnode->birth_rate - pnode->death_rate;
 
@@ -325,12 +343,30 @@ void CloneList::AdvanceState(double curr_time, double next_time)
   }
 }
 
+
+/* *********************************************************************
+  Beginning of function classes for modifying and inserting a new clone. The
+  classes all require InsertNode(new_clone, mutation_count) at the end, but
+  rates can be adjusted in the new clones to account for changes in rates or
+  other fitness parameters
+  *********************************************************************
+*/
+
+/*
+  NewCloneNoParams is a simple birth death mutation process with only passenger
+  mutations.
+*/
 void CloneList::NewCloneNoParams::operator()(struct clone *new_clone, struct clone *parent_clone)
 {
   // Do Nothing - nothing happens in this case
   cl.InsertNode(new_clone, 1);
 }
 
+/*
+  NewCloneFitMut is a simple birth death mutation process where the new clone
+  can have a different birth rate from a fitness distribution or a different
+  mutation probability based on the parameters imported.
+*/
 void CloneList::NewCloneFitMut::operator()(struct clone *new_clone, struct clone *parent_clone)
 {
   // updating rate parameters
@@ -370,6 +406,11 @@ void CloneList::NewCloneFitMut::operator()(struct clone *new_clone, struct clone
   cl.InsertNode(new_clone, 1);
 }
 
+/*
+  NewClonePunct allows for punctuated equilibrium, where a burst of mutations
+  can occur which are denoted in the ID. A burst can decrease or the fitness the
+  fitness with some probability parameter
+*/
 void CloneList::NewClonePunct::operator()(struct clone *new_clone, struct clone *parent_clone)
 {
   int number_mutations = 1;
@@ -428,6 +469,9 @@ void CloneList::NewClonePunct::operator()(struct clone *new_clone, struct clone 
   cl.InsertNode(new_clone, number_mutations);
 }
 
+/*
+  NewCloneEpi changes the fitness after k mutations have exists in the popoulation
+*/
 void CloneList::NewCloneEpi::operator()(struct clone *new_clone, struct clone *parent_clone)
 {
   new_clone->death_rate = parent_clone->death_rate;
@@ -469,6 +513,9 @@ void CloneList::NewCloneEpi::operator()(struct clone *new_clone, struct clone *p
   cl.InsertNode(new_clone, 1);
 }
 
+/*
+  For inserting a new custom function
+*/
 void CloneList::NewCloneCustom::operator()(struct clone *new_clone, struct clone *parent_clone)
 {
   // Insert custom code here for how to update a new clone
@@ -478,7 +525,7 @@ void CloneList::NewCloneCustom::operator()(struct clone *new_clone, struct clone
 }
 
 /*
-  Final out to file after running through a simulation
+  Final output to file after running through a simulation
 */
 void CloneList::Traverse(std::ofstream &F, int sim_number, bool count_alleles = false)
 {
@@ -633,6 +680,9 @@ void CloneList::Traverse(std::ofstream &F, int sim_number, double obs_time, bool
   }
 }
 
+/*
+  For sampling individuals from the population multiple times.
+*/
 void CloneList::SampleAndTraverse(std::ofstream &F, int sim_number, int sample_size, int nsamples)
 {
   // loop through to repeat with all samples

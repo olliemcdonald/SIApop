@@ -1,5 +1,23 @@
-//=======================================================
-// include guard
+/*
+ * =====================================================================================
+ *
+ *       Filename:  clonelist.h
+ *
+ *    Description: Header for class CloneList which creates a linked list
+ *                 of clone structures along with the methods that modify,
+ *                 add, delete, and output clones.
+ *
+ *        Version:  1.0
+ *        Created:  08/24/2016 16:50:27
+ *       Revision:  none
+ *       Compiler:  gcc
+ *
+ *         Author:  Thomas McDonald (), mcdonald@jimmy.harvard.edu
+ *   Organization:  DFCI
+ *
+ * =====================================================================================
+ */
+
 #ifndef __CLONELIST_TD_H_INCLUDED__
 #define __CLONELIST_TD_H_INCLUDED__
 

@@ -1,7 +1,27 @@
+/*
+ * =====================================================================================
+ *
+ *       Filename:  parameterlist.cpp
+ *
+ *    Description: Contains the class that imports the input file, parses
+ *                 and converts to parameters for the model.
+ *
+ *        Version:  1.0
+ *        Created:  08/24/2016 16:50:27
+ *       Revision:  none
+ *       Compiler:  gcc
+ *
+ *         Author:  Thomas McDonald (), mcdonald@jimmy.harvard.edu
+ *   Organization:  DFCI
+ *
+ * =====================================================================================
+ */
+
 #include "parameterlist.h"
 
-
-
+/*
+  ParseVector turns space-delimited text into a double vector
+*/
 void ParameterList::ParseVector(const std::string& s, std::vector<double>& v)
 {
     std::istringstream s2((*this)[s]);
@@ -10,7 +30,11 @@ void ParameterList::ParseVector(const std::string& s, std::vector<double>& v)
     while(s2 >> tmp) v.push_back(tmp);
 }
 
-void ParameterList::splitAndFill(const std::string& s)
+/*
+  SplitAndFill splits each line into the parameter name and its value and stores
+  it into a map.
+*/
+void ParameterList::SplitAndFill(const std::string& s)
 {
     std::string::size_type pos1 = s.find_first_of(" ,=\t");
     std::string::size_type pos2 = s.find_first_not_of(" ,=\t", pos1+1);
@@ -22,6 +46,18 @@ void ParameterList::splitAndFill(const std::string& s)
     if (!val.compare("NA")) return;
 
     (*this)[k] = val;
+}
+
+/*
+  ParameterList is a function template to convert the ParameterList map values
+  to their appropriate types
+*/
+template <class T> bool ParameterList::convert(const std::string s, T& result)
+{
+    std::string val = (*this)[s];
+    std::stringstream ss(val);
+    ss >> result;
+    return val.empty();
 }
 
 void ParameterList::init()
