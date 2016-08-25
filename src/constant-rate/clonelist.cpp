@@ -1,5 +1,22 @@
+/*
+ * =====================================================================================
+ *
+ *       Filename:  test.cpp
+ *
+ *    Description:
+ *
+ *        Version:  1.0
+ *        Created:  08/24/2016 16:50:27
+ *       Revision:  none
+ *       Compiler:  gcc
+ *
+ *         Author:  Thomas McDonald (), mcdonald@jimmy.harvard.edu
+ *   Organization:  DFCI
+ *
+ * =====================================================================================
+ */
+ 
 #include "clonelist.h"
-
 
 // Constructor
 void CloneList::init()

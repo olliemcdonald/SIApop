@@ -1,3 +1,23 @@
+/*
+ * =============================================================================
+ *
+ *       Filename:  BDsim.cpp
+ *
+ *    Description: Time-Dependent Birth-Death-Mutation process simulation for
+ *                 infinite-allele model with random fitness contributions using
+ *                 Gillespie Algorithm. Imports data, runs SSA and outputs to
+ *                 designated folder.
+ *
+ *        Version:  1.0
+ *        Created:  08/24/2016 16:50:27
+ *       Revision:  none
+ *       Compiler:  gcc
+ *
+ *         Author:  Thomas McDonald (), mcdonald@jimmy.harvard.edu
+ *   Organization:  DFCI
+ *
+ * =============================================================================
+ */
 #include <iostream>
 #include <fstream>
 #include <chrono>
@@ -12,18 +32,24 @@
 #include "parameterlist.h"
 #include "ratefunctions.h"
 
+// structure contains all global parameters used in multiple source files
 GlobalParameters gp;
-RateFunctionsPtr func_array[] = {&RateFunctions::constant, &RateFunctions::linear, &RateFunctions::logistic};
+// Function array for different time-dependent function types
+RateFunctionsPtr func_array[] = {&RateFunctions::constant,
+  &RateFunctions::linear, &RateFunctions::logistic};
 gsl_integration_workspace *workspace = gsl_integration_workspace_alloc(1000);
-
 // Pointer to Function class which will point to an instance of one based on parameters
 CloneList::NewCloneFunction* NewClone;
 
 int main(int argc, char *argv[])
 {
+  // timer for total simulation time - FOR TESTING
   auto t1 = std::chrono::high_resolution_clock::now();
 
+  // track total error from integration - FOR TESTING
   gp.tot_error = 0;
+
+  //  declaring random number generator and setting seed
   gp.rng = gsl_rng_alloc(gsl_rng_mt19937);
   gp.seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
 
@@ -38,7 +64,7 @@ int main(int argc, char *argv[])
 
   for (int i = 1; i < argc; i++) {
     if (i + 1 != argc)
-    { // Check that we haven't finished parsing arguments
+    { // Check that haven't finished parsing arguments
         if (strcmp(argv[i], "-in") == 0) { // input file
           input_params = argv[i + 1];
         } else if (strcmp(argv[i], "-out") == 0) { // output file
@@ -50,7 +76,7 @@ int main(int argc, char *argv[])
   }
 
 
-  // declare and open output streams
+  // declare and open output stream for simulation statistics
   char fn[100];
   std::ofstream sim_stats;
   sprintf(fn,"%s/sim_stats.txt", output_folder);
@@ -59,11 +85,11 @@ int main(int argc, char *argv[])
   sim_stats.precision(8);
 
 
-  // declare and initialize parameter list and input
+  // declare and initialize parameter list for simulation
   ParameterList params;
   params.init();
 
-  // parsing through the input file and converting adding to parameter list
+  // parsing through the input file and converting/adding to parameter list
   if( input_params != NULL )
   {
     std::string s = input_params;
@@ -84,7 +110,7 @@ int main(int argc, char *argv[])
     sim_stats << it->first << ", " << it->second << "\n";
   }
 
-
+  // convert all parameters imported from file into respective values in gp
   params.convert("tot_life", gp.tot_life);
   params.convert("max_pop", gp.max_pop);
   params.convert("start_time", gp.start_time);
@@ -222,6 +248,7 @@ int main(int argc, char *argv[])
     }
   }
 
+  // Open output stream for sampling data
   std::ofstream sample_data;
   if(gp.sample_size > 0 & gp.num_samples > 0)
   {
@@ -235,6 +262,7 @@ int main(int argc, char *argv[])
   // set RNG seed
   gsl_rng_set(gp.rng, gp.seed);
 
+  // simulation variables
   double avg_sim_endtime = 0;
   int count_detect = 0;
   double current_time;
@@ -242,7 +270,7 @@ int main(int argc, char *argv[])
   double rand_next_time;
   int count_extinct = 0;
 
-
+  // Beginning of simulation that has "sim" number of runs.
   for (int sim = 1; sim <= gp.num_sims; sim++)
   {
     // initialize time to zero
@@ -281,7 +309,7 @@ int main(int argc, char *argv[])
     }
 
 
-    if( ancestor_file == NULL )
+    if( ancestor_file == NULL ) // if no ancestor file exists
     {
       /*
         total rate for time-homogeneous population should be the max for the
@@ -289,9 +317,9 @@ int main(int argc, char *argv[])
         the number of ancestors
       */
       population.tot_rate_homog = (gp.B_max * gp.birth_rate + gp.D_max * gp.death_rate) * gp.ancestors * gp.ancestor_clones;
-
       population.tot_cell_count = gp.ancestors * gp.ancestor_clones;
 
+      // go through all ancestors and initialize clones for each
       for(int ance_clone_count = 1; ance_clone_count <= gp.ancestor_clones; ance_clone_count++)
       {
         // Create Ancestor Node
@@ -322,7 +350,7 @@ int main(int argc, char *argv[])
         population.InsertAncestor(ancestor);
       }
     }
-    else
+    else // ancestor file exists to read from
     {
       std::cout << "Reading ancestor file...";
 
@@ -444,7 +472,7 @@ int main(int argc, char *argv[])
     population.Traverse(timedata, sim, current_time, gp.trace_ancestry, gp.count_alleles);
     std::cout << "Initial Traverse Done\n";
 
-    // Begin single simulation with while loop
+    // Begin single simulation with while loop that exists when hit max time, max pop, or extinction
     while ( (population.tot_cell_count < gp.max_pop) &&
             (population.tot_cell_count > 0) &&
             (current_time < gp.tot_life) )
@@ -458,7 +486,7 @@ int main(int argc, char *argv[])
       // update current_time
       current_time = current_time + rand_next_time;
 
-      // Method to output observation times if they are in parameters
+      // Method to output data at designated observation times
       while(current_time > observation_times[curr_observation])
       {
         if( (current_time < observation_times[curr_observation + 1]) ||
@@ -519,6 +547,7 @@ int main(int argc, char *argv[])
   //avg_sim_endtime = avg_sim_endtime * (double)num_sims / (double)count_detect;
 
   gsl_rng_free(gp.rng);
+  delete NewClone;
 
   sim_stats << "avg_sim_endtime, " << avg_sim_endtime << "\n" <<
                "count_detect, " << count_detect << "\n" <<
