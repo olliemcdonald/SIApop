@@ -260,6 +260,8 @@ double CloneList::AdvanceTime(double curr_time)
     }
   }
 
+  //std::cout << tot_rate << "\t" << curr_time + rand_next_time << "\t" << tot_cell_count << "\n";
+
   return rand_next_time;
 }
 

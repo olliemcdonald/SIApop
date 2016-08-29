@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
         {
             // allow comments
             if(s[0] == '#') continue;
-            params.splitAndFill(s);
+            params.SplitAndFill(s);
         }
     }
   }

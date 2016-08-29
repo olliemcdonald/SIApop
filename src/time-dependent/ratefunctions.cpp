@@ -35,7 +35,8 @@ double RateFunctions::linear(double t, void *p)
   double b = params->coefs[1];
   double min = params->coefs[2];
 
-  double y = rate * GSL_MAX(a + t * b, min);
+  double y = rate * (a + t * b);
+  y = GSL_MAX(y, min);
   return y;
 }
 
@@ -51,5 +52,18 @@ double RateFunctions::logistic(double t, void *p)
   double M = params->coefs[5];
 
   double y = rate * (A + (K - A) / pow(1 + Q * exp(-B * (t-M)), 1 / nu) );
+  return y;
+}
+
+
+double RateFunctions::Gompertz(double t, void *p)
+{
+  struct TimeDependentParameters *params = (struct TimeDependentParameters *)p;
+  double rate = params->rate;
+  double asymptote = params->coefs[0];
+  double alpha = params->coefs[1];
+  double beta = params->coefs[2];
+
+  double y = rate * (asymptote + beta * exp(- alpha * t));
   return y;
 }

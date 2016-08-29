@@ -48,17 +48,7 @@ void ParameterList::SplitAndFill(const std::string& s)
     (*this)[k] = val;
 }
 
-/*
-  ParameterList is a function template to convert the ParameterList map values
-  to their appropriate types
-*/
-template <class T> bool ParameterList::convert(const std::string s, T& result)
-{
-    std::string val = (*this)[s];
-    std::stringstream ss(val);
-    ss >> result;
-    return val.empty();
-}
+
 
 void ParameterList::init()
 {

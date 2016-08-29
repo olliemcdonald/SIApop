@@ -19,7 +19,7 @@ FOLDER-TD := time-dependent
 SOURCES-TD := $(shell find $(SRCDIR)/$(FOLDER-TD) -type f -name *$.$(SRCEXT))
 OBJECTS-TD := $(patsubst $(SRCDIR)/$(FOLDER-TD)/%,$(BUILDDIR)/$(FOLDER-TD)/%,$(SOURCES-TD:.$(SRCEXT)=.o))
 
-CFLAGS := -g -Wall
+CFLAGS := -g -Wall -O3
 LIB := -lgsl
 LPATH := /usr/local/lib
 INC := -I /usr/local/include
