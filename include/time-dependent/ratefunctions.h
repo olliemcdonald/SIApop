@@ -34,4 +34,7 @@ public:
   static double custom(double t, void *params);
 };
 
+
+double MaximizeRate(gsl_function rate_function, double start_time, double end_time, int bins = 1000);
+
 #endif // __RATEFUNCTIONS_TD_H_INCLUDED__

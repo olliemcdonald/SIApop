@@ -342,8 +342,14 @@ void CloneList::AdvanceState(double curr_time, double next_time)
         new_mut_node->birth_rate = 0;
         new_mut_node->death_rate = 0;
 
-        tot_rate_homog = tot_rate_homog + new_mut_node->birth_params.rate * gp.B_max +
-          new_mut_node->death_params.rate * gp.D_max;
+        // Get max values of function to add to homogeneous rate
+        new_mut_node->birth_params.homogeneous_rate = MaximizeRate((new_mut_node->B), curr_time, gp.tot_life, 1000);
+        (new_mut_node->B).params = &(new_mut_node->birth_params);
+        new_mut_node->death_params.homogeneous_rate = MaximizeRate((new_mut_node->D), curr_time, gp.tot_life, 1000);
+        (new_mut_node->D).params = &(new_mut_node->death_params);
+
+        tot_rate_homog = tot_rate_homog + new_mut_node->birth_params.homogeneous_rate +
+          new_mut_node->death_params.homogeneous_rate;
 
         tot_cell_count++;
         num_clones++;
@@ -360,8 +366,8 @@ void CloneList::AdvanceState(double curr_time, double next_time)
         tot_cell_count++;
         if(gp.count_alleles) ChangeAncestorAllele(pnode, true);
         // Add to homogeneous process that undergoes thinning
-        tot_rate_homog = tot_rate_homog + pnode->birth_params.rate * gp.B_max +
-          pnode->death_params.rate * gp.D_max;
+        tot_rate_homog = tot_rate_homog + pnode->birth_params.homogeneous_rate +
+          pnode->death_params.homogeneous_rate;
       }
 
       // Reprioritize clone based on size by moving to left
@@ -379,8 +385,8 @@ void CloneList::AdvanceState(double curr_time, double next_time)
       tot_cell_count = tot_cell_count - 1;
       // decrease allele count in ancestors
       if(gp.count_alleles) ChangeAncestorAllele(pnode, false);
-      tot_rate_homog = tot_rate_homog - pnode->birth_params.rate * gp.B_max -
-        pnode->death_params.rate * gp.D_max;
+      tot_rate_homog = tot_rate_homog - pnode->birth_params.homogeneous_rate -
+        pnode->death_params.homogeneous_rate;
 
       // Clean up of clones with zero to speed up later runs
       if(pnode->cell_count == 0)
@@ -449,7 +455,7 @@ void CloneList::NewCloneFitMut::operator()(struct clone *new_clone, struct clone
       did_count_driver = true;
       new_clone->is_driver = true;
     }
-    new_clone->birth_params.rate = fmax(0, additional_rate + new_clone->birth_params.rate);
+    new_clone->birth_params.homogeneous_rate = fmax(0, additional_rate + new_clone->birth_params.homogeneous_rate);
   }
 
   if(mut_params.is_mutator)
@@ -513,11 +519,11 @@ void CloneList::NewClonePunct::operator()(struct clone *new_clone, struct clone 
         // the additional rate can go to the birth or the death rate
         if( rand_advantage < punct_params.punctuated_advantageous_prob )
         {
-          new_clone->birth_params.rate = fmax(0, additional_rate + new_clone->birth_params.rate);
+          new_clone->birth_params.homogeneous_rate = fmax(0, additional_rate + new_clone->birth_params.homogeneous_rate);
         }
         else
         {
-          new_clone->death_params.rate = fmax(0, additional_rate + new_clone->death_params.rate);
+          new_clone->death_params.homogeneous_rate = fmax(0, additional_rate + new_clone->death_params.homogeneous_rate);
         }
       }
     }
@@ -570,7 +576,7 @@ void CloneList::NewCloneEpi::operator()(struct clone *new_clone, struct clone *p
       {
         additional_rate = additional_rate * epi_params.epistatic_multiplier;
       }
-      new_clone->birth_params.rate = fmax(0, additional_rate + new_clone->birth_params.rate);
+      new_clone->birth_params.homogeneous_rate = fmax(0, additional_rate + new_clone->birth_params.homogeneous_rate);
     }
   }
 
@@ -620,8 +626,8 @@ void CloneList::Traverse(std::ofstream &F, int sim_number, bool count_alleles = 
            pnode->clone_id << "\t" <<
            pnode->cell_count << "\t" <<
            pnode->allele_count << "\t" <<
-           pnode->birth_params.rate << "\t" <<
-           pnode->death_params.rate << "\t" <<
+           pnode->birth_params.homogeneous_rate << "\t" <<
+           pnode->death_params.homogeneous_rate << "\t" <<
            pnode->mut_prob << "\t" <<
            pnode->clone_time << "\t" <<
            pnode->subclone_count << "\t" <<
@@ -636,8 +642,8 @@ void CloneList::Traverse(std::ofstream &F, int sim_number, bool count_alleles = 
            pnode->clone_id << "\t" <<
            pnode->cell_count << "\t" <<
            pnode->allele_count << "\t" <<
-           pnode->birth_params.rate << "\t" <<
-           pnode->death_params.rate << "\t" <<
+           pnode->birth_params.homogeneous_rate << "\t" <<
+           pnode->death_params.homogeneous_rate << "\t" <<
            pnode->mut_prob << "\t" <<
            pnode->clone_time << "\t" <<
            pnode->subclone_count << "\t" <<
@@ -653,8 +659,8 @@ void CloneList::Traverse(std::ofstream &F, int sim_number, bool count_alleles = 
       F << sim_number << "\t" <<
            pnode->clone_id << "\t" <<
            pnode->cell_count << "\t" <<
-           pnode->birth_params.rate << "\t" <<
-           pnode->death_params.rate << "\t" <<
+           pnode->birth_params.homogeneous_rate << "\t" <<
+           pnode->death_params.homogeneous_rate << "\t" <<
            pnode->mut_prob << "\t" <<
            pnode->clone_time << "\t" <<
            pnode->subclone_count << "\t" <<
@@ -668,8 +674,8 @@ void CloneList::Traverse(std::ofstream &F, int sim_number, bool count_alleles = 
       F << sim_number << "\t" <<
            pnode->clone_id << "\t" <<
            pnode->cell_count << "\t" <<
-           pnode->birth_params.rate << "\t" <<
-           pnode->death_params.rate << "\t" <<
+           pnode->birth_params.homogeneous_rate << "\t" <<
+           pnode->death_params.homogeneous_rate << "\t" <<
            pnode->mut_prob << "\t" <<
            pnode->clone_time << "\t" <<
            pnode->subclone_count << "\t" <<
@@ -696,7 +702,7 @@ void CloneList::Traverse(std::ofstream &F, int sim_number, double obs_time, bool
              obs_time << "\t" <<
              pnode->clone_id << "\t" <<
              pnode->cell_count << "\t" << pnode->allele_count << "\t" <<
-             pnode->birth_params.rate - pnode->death_params.rate << "\t" <<
+             pnode->birth_params.homogeneous_rate - pnode->death_params.homogeneous_rate << "\t" <<
              pnode->clone_time << "\t";
 
         if(pnode->parent == NULL)
@@ -705,7 +711,7 @@ void CloneList::Traverse(std::ofstream &F, int sim_number, double obs_time, bool
         }
         else
         {
-          F << pnode->parent->birth_params.rate - pnode->parent->death_params.rate << "\t" <<
+          F << pnode->parent->birth_params.homogeneous_rate - pnode->parent->death_params.homogeneous_rate << "\t" <<
                pnode->parent->clone_time << "\n";
         }
       }
@@ -718,7 +724,7 @@ void CloneList::Traverse(std::ofstream &F, int sim_number, double obs_time, bool
              obs_time << "\t" <<
              pnode->clone_id << "\t" <<
              pnode->cell_count << "\t" <<
-             pnode->birth_params.rate - pnode->death_params.rate << "\t" <<
+             pnode->birth_params.homogeneous_rate - pnode->death_params.homogeneous_rate << "\t" <<
              pnode->clone_time << "\t";
 
         if(pnode->parent == NULL)
@@ -727,7 +733,7 @@ void CloneList::Traverse(std::ofstream &F, int sim_number, double obs_time, bool
         }
         else
         {
-          F << pnode->parent->birth_params.rate - pnode->parent->death_params.rate << "\t" <<
+          F << pnode->parent->birth_params.homogeneous_rate - pnode->parent->death_params.homogeneous_rate << "\t" <<
                pnode->parent->clone_time << "\n";
         }
       }
@@ -743,7 +749,7 @@ void CloneList::Traverse(std::ofstream &F, int sim_number, double obs_time, bool
              obs_time << "\t" <<
              pnode->clone_id << "\t" <<
              pnode->cell_count << "\t" << pnode->allele_count << "\t" <<
-             pnode->birth_params.rate - pnode->death_params.rate << "\t" <<
+             pnode->birth_params.homogeneous_rate - pnode->death_params.homogeneous_rate << "\t" <<
              pnode->clone_time << "\n";
       }
     }
@@ -755,7 +761,7 @@ void CloneList::Traverse(std::ofstream &F, int sim_number, double obs_time, bool
              obs_time << "\t" <<
              pnode->clone_id << "\t" <<
              pnode->cell_count << "\t" <<
-             pnode->birth_params.rate - pnode->death_params.rate << "\t" <<
+             pnode->birth_params.homogeneous_rate - pnode->death_params.homogeneous_rate << "\t" <<
              pnode->clone_time << "\n";
       }
     }

@@ -57,7 +57,7 @@ struct GlobalParameters
 struct TimeDependentParameters
 {
   int type;
-  double rate;
+  double homogeneous_rate;
   std::vector<double> coefs;
 };
 

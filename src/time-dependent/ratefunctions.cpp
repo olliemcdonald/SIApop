@@ -23,19 +23,21 @@
 double RateFunctions::constant(double t, void *p)
 {
   struct TimeDependentParameters *params = (struct TimeDependentParameters *)p;
-  double rate = params->rate;
-  return rate;
+  double a = params->coefs[0];
+  double y = a;
+
+  return y;
 }
 
 double RateFunctions::linear(double t, void *p)
 {
   struct TimeDependentParameters *params = (struct TimeDependentParameters *)p;
-  double rate = params->rate;
+
   double a = params->coefs[0];
   double b = params->coefs[1];
   double min = params->coefs[2];
 
-  double y = rate * (a + t * b);
+  double y = (a + t * b);
   y = GSL_MAX(y, min);
   return y;
 }
@@ -43,7 +45,7 @@ double RateFunctions::linear(double t, void *p)
 double RateFunctions::logistic(double t, void *p)
 {
   struct TimeDependentParameters *params = (struct TimeDependentParameters *)p;
-  double rate = params->rate;
+
   double A = params->coefs[0];
   double K = params->coefs[1];
   double B = params->coefs[2];
@@ -51,7 +53,7 @@ double RateFunctions::logistic(double t, void *p)
   double Q = params->coefs[4];
   double M = params->coefs[5];
 
-  double y = rate * (A + (K - A) / pow(1 + Q * exp(-B * (t-M)), 1 / nu) );
+  double y = (A + (K - A) / pow(1 + Q * exp(-B * (t-M)), 1 / nu) );
   return y;
 }
 
@@ -59,12 +61,12 @@ double RateFunctions::logistic(double t, void *p)
 double RateFunctions::Gompertz(double t, void *p)
 {
   struct TimeDependentParameters *params = (struct TimeDependentParameters *)p;
-  double rate = params->rate;
+
   double asymptote = params->coefs[0];
   double alpha = params->coefs[1];
   double beta = params->coefs[2];
 
-  double y = rate * (asymptote + beta * exp(- alpha * t));
+  double y = (asymptote + beta * exp(- alpha * t));
   return y;
 }
 
@@ -72,8 +74,30 @@ double RateFunctions::Gompertz(double t, void *p)
 double RateFunctions::custom(double t, void *p)
 {
   struct TimeDependentParameters *params = (struct TimeDependentParameters *)p;
-  double rate = params->rate;
+  double a = params->coefs[0];
 
-  double y = rate;
+  double y = a;
   return y;
+}
+
+
+
+double MaximizeRate(gsl_function rate_function, double start_time, double end_time, int bins = 1000)
+{
+  double max = GSL_FN_EVAL(&(rate_function), start_time);
+  double test_max;
+  double delta_t = (end_time - start_time) / bins;
+
+  if(delta_t > 0.1)
+  {
+    delta_t = 0.1;
+    bins = ceil((end_time - start_time) / delta_t);
+  }
+
+  for(int step = 1; step <= bins; ++step)
+  {
+    test_max = GSL_FN_EVAL(&(rate_function), start_time + delta_t * step);
+    max = fmax(max, test_max);
+  }
+  return max;
 }

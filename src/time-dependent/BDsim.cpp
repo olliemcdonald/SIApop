@@ -140,11 +140,7 @@ int main(int argc, char *argv[])
   params.convert("allow_extinction", gp.allow_extinction);
   params.convert("trace_ancestry", gp.trace_ancestry);
   params.convert("count_alleles", gp.count_alleles);
-  params.convert("birth_rate", gp.birth_rate);
-  params.convert("death_rate", gp.death_rate);
   params.convert("mutation_prob", gp.mutation_prob);
-  params.convert("B_max", gp.B_max);
-  params.convert("D_max", gp.D_max);
 
   FitnessParameters fit_params;
   params.convert("alpha_fitness", fit_params.alpha_fitness);
@@ -191,12 +187,12 @@ int main(int argc, char *argv[])
   TimeDependentParameters td_birth_params;
   params.convert("birth_function", td_birth_params.type);
   params.ParseVector("td_birth_params", td_birth_params.coefs);
-  td_birth_params.rate = gp.birth_rate;
+  td_birth_params.homogeneous_rate = 1;
 
   TimeDependentParameters td_death_params;
   params.convert("death_function", td_death_params.type);
   params.ParseVector("td_death_params", td_death_params.coefs);
-  td_death_params.rate = gp.death_rate;
+  td_death_params.homogeneous_rate = 1;
 
   /*
     END OF VARIABLE INPUT AND CONVERSION
@@ -317,7 +313,22 @@ int main(int argc, char *argv[])
         birth and death functions times their associated birth rates times
         the number of ancestors
       */
-      population.tot_rate_homog = (gp.B_max * gp.birth_rate + gp.D_max * gp.death_rate) * gp.ancestors * gp.ancestor_clones;
+      gsl_function B_max;
+      gsl_function D_max;
+      B_max.function = rate_function_array[td_birth_params.type];
+      D_max.function = rate_function_array[td_death_params.type];
+      B_max.params = &td_birth_params;
+      D_max.params = &td_death_params;
+
+      // crude global max finder just to give us a homogeneous rate value
+      td_birth_params.homogeneous_rate = MaximizeRate(B_max, gp.start_time, gp.tot_life, 1000);
+      td_death_params.homogeneous_rate = MaximizeRate(D_max, gp.start_time, gp.tot_life, 1000);
+      std::cout << "default max birth rate:\t" << td_birth_params.homogeneous_rate << "\t" <<
+                   "default max death rate:\t" << td_death_params.homogeneous_rate << "\n";
+
+
+      population.tot_rate_homog = (td_birth_params.homogeneous_rate +
+        td_death_params.homogeneous_rate) * gp.ancestors * gp.ancestor_clones;
       population.tot_cell_count = gp.ancestors * gp.ancestor_clones;
 
       // go through all ancestors and initialize clones for each
@@ -353,7 +364,7 @@ int main(int argc, char *argv[])
     }
     else // ancestor file exists to read from
     {
-      std::cout << "Reading ancestor file...";
+      std::cout << "Reading ancestor file...\n";
 
       population.tot_rate_homog = 0;
       population.tot_rate = 0;
@@ -397,8 +408,6 @@ int main(int argc, char *argv[])
             ancestor->clone_id = !ancestor_map["unique_id"].empty() ? ancestor_map["unique_id"] : "";
             ancestor->cell_count = !ancestor_map["numcells"].empty() ? stoi(ancestor_map["numcells"]) : 0;
             ancestor->allele_count = ancestor->cell_count;
-            ancestor->birth_params.rate = !ancestor_map["birthrate"].empty() ? stof(ancestor_map["birthrate"]) : td_birth_params.rate;
-            ancestor->death_params.rate = !ancestor_map["deathrate"].empty() ? stof(ancestor_map["deathrate"]) : td_death_params.rate;
             ancestor->mut_prob = !ancestor_map["mutprob"].empty() ? stof(ancestor_map["mutprob"]) : gp.mutation_prob;
             ancestor->clone_time = !ancestor_map["initialtime"].empty() ? stof(ancestor_map["initialtime"]) : current_time;
             ancestor->subclone_count = !ancestor_map["subclone_count"].empty() ? stoi(ancestor_map["subclone_count"]) : 0;
@@ -427,7 +436,7 @@ int main(int argc, char *argv[])
             else // Use defaults if not present
             {
               ancestor->birth_params = td_birth_params;
-              (ancestor->B).params = &(td_birth_params);
+              (ancestor->B).params = &(ancestor->birth_params);
             }
             (ancestor->B).function = rate_function_array[ancestor->birth_params.type];
 
@@ -448,18 +457,27 @@ int main(int argc, char *argv[])
             else
             {
               ancestor->death_params = td_death_params;
-              (ancestor->D).params = &(td_death_params);
+              (ancestor->D).params = &(ancestor->death_params);
             }
             (ancestor->D).function = rate_function_array[ancestor->death_params.type];
 
+            // crude global max finder just to give us a homogeneous rate value
+            ancestor->birth_params.homogeneous_rate = MaximizeRate((ancestor->B), gp.start_time, gp.tot_life, 1000);
+            (ancestor->B).params = &(ancestor->birth_params);
+            ancestor->death_params.homogeneous_rate = MaximizeRate((ancestor->D), gp.start_time, gp.tot_life, 1000);
+            (ancestor->D).params = &(ancestor->death_params);
 
-            ancestor->birth_rate = ancestor->cell_count * ancestor->birth_params.rate;
-            ancestor->death_rate = ancestor->cell_count * ancestor->death_params.rate;
+            std::cout << "ancestor " << ancestor->clone_id << " max birth rate:\t" << ancestor->birth_params.homogeneous_rate << "\t" <<
+                         "ancestor " << ancestor->clone_id << " max death rate:\t" << ancestor->death_params.homogeneous_rate << "\n";
+
+
+            ancestor->birth_rate = ancestor->cell_count * ancestor->birth_params.homogeneous_rate;
+            ancestor->death_rate = ancestor->cell_count * ancestor->death_params.homogeneous_rate;
 
             population.InsertAncestor(ancestor);
 
             population.tot_rate_homog = population.tot_rate_homog +
-                (ancestor->birth_params.rate * gp.B_max + ancestor->death_params.rate * gp.D_max) *
+                (ancestor->birth_params.homogeneous_rate + ancestor->death_params.homogeneous_rate) *
                 ancestor->cell_count;
             population.tot_cell_count = population.tot_cell_count + ancestor->cell_count;
 
