@@ -67,3 +67,13 @@ double RateFunctions::Gompertz(double t, void *p)
   double y = rate * (asymptote + beta * exp(- alpha * t));
   return y;
 }
+
+
+double RateFunctions::custom(double t, void *p)
+{
+  struct TimeDependentParameters *params = (struct TimeDependentParameters *)p;
+  double rate = params->rate;
+
+  double y = rate;
+  return y;
+}

@@ -29,9 +29,9 @@ public:
   static double constant(double t, void *params);
   static double linear(double t, void *params);
   static double logistic(double t, void *params);
-  //double polynom(double t, void *params);
+  static double Gompertz(double t, void *params);
   //double piecewise(double t, void *params);
-  //double custom(double t, void *params);
+  static double custom(double t, void *params);
 };
 
 #endif // __RATEFUNCTIONS_TD_H_INCLUDED__

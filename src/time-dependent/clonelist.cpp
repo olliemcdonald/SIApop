@@ -330,9 +330,9 @@ void CloneList::AdvanceState(double curr_time, double next_time)
         new_mut_node->mut_prob = pnode->mut_prob;
         new_mut_node->birth_params = pnode->birth_params;
         new_mut_node->death_params = pnode->death_params;
-        (new_mut_node->B).function = func_array[new_mut_node->birth_params.type];
+        (new_mut_node->B).function = rate_function_array[new_mut_node->birth_params.type];
         (new_mut_node->B).params = &(new_mut_node->birth_params);
-        (new_mut_node->D).function = func_array[new_mut_node->death_params.type];
+        (new_mut_node->D).function = rate_function_array[new_mut_node->death_params.type];
         (new_mut_node->D).params = &(new_mut_node->death_params);
 
         // Function class to add any modifications to rates and insert clone
@@ -467,8 +467,8 @@ void CloneList::NewCloneFitMut::operator()(struct clone *new_clone, struct clone
     new_clone->mut_prob = parent_clone->mut_prob;
   }
 
-  (new_clone->B).function = func_array[new_clone->birth_params.type];
-  (new_clone->D).function = func_array[new_clone->death_params.type];
+  (new_clone->B).function = rate_function_array[new_clone->birth_params.type];
+  (new_clone->D).function = rate_function_array[new_clone->death_params.type];
   (new_clone->B).params = &(new_clone->birth_params);
   (new_clone->D).params = &(new_clone->death_params);
 
@@ -538,9 +538,9 @@ void CloneList::NewClonePunct::operator()(struct clone *new_clone, struct clone 
     new_clone->mut_prob = parent_clone->mut_prob;
   }
 
-  (new_clone->B).function = func_array[new_clone->birth_params.type];
+  (new_clone->B).function = rate_function_array[new_clone->birth_params.type];
   (new_clone->B).params = &(new_clone->birth_params);
-  (new_clone->D).function = func_array[new_clone->death_params.type];
+  (new_clone->D).function = rate_function_array[new_clone->death_params.type];
   (new_clone->D).params = &(new_clone->death_params);
   // end of update rates
 
@@ -589,9 +589,9 @@ void CloneList::NewCloneEpi::operator()(struct clone *new_clone, struct clone *p
     new_clone->mut_prob = parent_clone->mut_prob;
   }
 
-  (new_clone->B).function = func_array[new_clone->birth_params.type];
+  (new_clone->B).function = rate_function_array[new_clone->birth_params.type];
   (new_clone->B).params = &(new_clone->birth_params);
-  (new_clone->D).function = func_array[new_clone->death_params.type];
+  (new_clone->D).function = rate_function_array[new_clone->death_params.type];
   (new_clone->D).params = &(new_clone->death_params);
   // end of update rates
 

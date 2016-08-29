@@ -35,8 +35,9 @@
 // structure contains all global parameters used in multiple source files
 GlobalParameters gp;
 // Function array for different time-dependent function types
-RateFunctionsPtr func_array[] = {&RateFunctions::constant,
-  &RateFunctions::linear, &RateFunctions::logistic};
+RateFunctionsPtr rate_function_array[] = {&RateFunctions::constant,
+  &RateFunctions::linear, &RateFunctions::logistic,
+  &RateFunctions::Gompertz, &RateFunctions::custom};
 gsl_integration_workspace *workspace = gsl_integration_workspace_alloc(1000);
 // Pointer to Function class which will point to an instance of one based on parameters
 CloneList::NewCloneFunction* NewClone;
@@ -338,8 +339,8 @@ int main(int argc, char *argv[])
         // input default types
         ancestor->birth_params = td_birth_params;
         ancestor->death_params = td_death_params;
-        (ancestor->B).function = func_array[td_birth_params.type];
-        (ancestor->D).function = func_array[td_death_params.type];
+        (ancestor->B).function = rate_function_array[td_birth_params.type];
+        (ancestor->D).function = rate_function_array[td_death_params.type];
         (ancestor->B).params = &(ancestor->birth_params);
         (ancestor->D).params = &(ancestor->death_params);
 
@@ -428,7 +429,7 @@ int main(int argc, char *argv[])
               ancestor->birth_params = td_birth_params;
               (ancestor->B).params = &(td_birth_params);
             }
-            (ancestor->B).function = func_array[ancestor->birth_params.type];
+            (ancestor->B).function = rate_function_array[ancestor->birth_params.type];
 
 
             if(!ancestor_map["df_params"].empty())
@@ -449,7 +450,7 @@ int main(int argc, char *argv[])
               ancestor->death_params = td_death_params;
               (ancestor->D).params = &(td_death_params);
             }
-            (ancestor->D).function = func_array[ancestor->death_params.type];
+            (ancestor->D).function = rate_function_array[ancestor->death_params.type];
 
 
             ancestor->birth_rate = ancestor->cell_count * ancestor->birth_params.rate;

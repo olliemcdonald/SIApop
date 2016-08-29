@@ -33,7 +33,7 @@
 
 
 extern GlobalParameters gp;
-extern RateFunctionsPtr func_array[];
+extern RateFunctionsPtr rate_function_array[];
 extern gsl_integration_workspace *workspace;
 
 

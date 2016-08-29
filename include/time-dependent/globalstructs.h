@@ -73,8 +73,8 @@ struct clone
   int driver_count;
   bool is_driver;
   double mut_prob;
-  double birth_rate; // treated as sum of birth rates since birth_params contains rate
-  double death_rate; // treated as sum of birth rates since death_params contains rate
+  double birth_rate; // treated as sum of birth rates of all individuals since birth_params contains rate
+  double death_rate; // treated as sum of birth rates of all individuals since death_params contains rate
   double clone_time;
 
   // time-dependent information - unique to this file
