@@ -253,6 +253,7 @@ double CloneList::AdvanceTime(double curr_time)
     // the next time.
     double u_thin = gsl_ran_flat(gp.rng, 0, 1);
     double beta_ratio = tot_rate / tot_rate_homog;
+    //std::cout << beta_ratio << "\n";
 
     if(u_thin <= beta_ratio)
     {
@@ -344,9 +345,9 @@ void CloneList::AdvanceState(double curr_time, double next_time)
 
         // Get max values of function to add to homogeneous rate
         new_mut_node->birth_params.homogeneous_rate = MaximizeRate((new_mut_node->B), curr_time, gp.tot_life, 1000);
-        (new_mut_node->B).params = &(new_mut_node->birth_params);
+        //(new_mut_node->B).params = &(new_mut_node->birth_params);
         new_mut_node->death_params.homogeneous_rate = MaximizeRate((new_mut_node->D), curr_time, gp.tot_life, 1000);
-        (new_mut_node->D).params = &(new_mut_node->death_params);
+        //(new_mut_node->D).params = &(new_mut_node->death_params);
 
         tot_rate_homog = tot_rate_homog + new_mut_node->birth_params.homogeneous_rate +
           new_mut_node->death_params.homogeneous_rate;

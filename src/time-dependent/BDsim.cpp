@@ -463,9 +463,9 @@ int main(int argc, char *argv[])
 
             // crude global max finder just to give us a homogeneous rate value
             ancestor->birth_params.homogeneous_rate = MaximizeRate((ancestor->B), gp.start_time, gp.tot_life, 1000);
-            (ancestor->B).params = &(ancestor->birth_params);
+            //(ancestor->B).params = &(ancestor->birth_params);
             ancestor->death_params.homogeneous_rate = MaximizeRate((ancestor->D), gp.start_time, gp.tot_life, 1000);
-            (ancestor->D).params = &(ancestor->death_params);
+            //(ancestor->D).params = &(ancestor->death_params);
 
             std::cout << "ancestor " << ancestor->clone_id << " max birth rate:\t" << ancestor->birth_params.homogeneous_rate << "\t" <<
                          "ancestor " << ancestor->clone_id << " max death rate:\t" << ancestor->death_params.homogeneous_rate << "\n";
