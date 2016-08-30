@@ -432,7 +432,8 @@ int main(int argc, char *argv[])
     {
       population.DeleteList();
       count_extinct++;
-      sim = sim - 1;
+      gp.num_sims++; // increase number of sims
+      std::cout << "Population went extinct. Restarting.\n";
       continue;
     }
 

@@ -82,7 +82,7 @@ double RateFunctions::custom(double t, void *p)
 
 
 
-double MaximizeRate(gsl_function rate_function, double start_time, double end_time, int bins = 1000)
+double MaximizeRate(gsl_function rate_function, double start_time, double end_time, int bins)
 {
   double max = GSL_FN_EVAL(&(rate_function), start_time);
   double test_max;

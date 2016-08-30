@@ -389,6 +389,7 @@ void CloneList::AdvanceState(double curr_time, double next_time)
       tot_rate_homog = tot_rate_homog - pnode->birth_params.homogeneous_rate -
         pnode->death_params.homogeneous_rate;
 
+      /* Need to figure out
       // Clean up of clones with zero to speed up later runs
       if(pnode->cell_count == 0)
       {
@@ -397,6 +398,7 @@ void CloneList::AdvanceState(double curr_time, double next_time)
         flag = true;
         break;
       }
+      */
 
       // sort by moving to the right until fits
       CloneSort(pnode, false);

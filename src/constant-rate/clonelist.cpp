@@ -77,6 +77,7 @@ void CloneList::InsertNode(clone* newnode, int number_mutations)
 
     newnode->prevnode = currnode;
     currnode->nextnode = newnode;
+    currnode = newnode;
   }
 }
 
@@ -118,6 +119,7 @@ void CloneList::InsertAncestor(clone* ancestor)
 
     ancestor->prevnode = currnode;
     currnode->nextnode = ancestor;
+    currnode = ancestor;
   }
 }
 
@@ -250,11 +252,12 @@ void CloneList::AdvanceState(double curr_time, double next_time)
   struct clone *pnode;
   pnode = root;
 
+
   // cycle through nodes to determine the next event that occurs
   while ( (pnode) && !(flag) )
   {
     // Condition for new birth
-    if ( rand_next_event <= summand + (pnode->cell_count) * (pnode->birth_rate) )
+    if ( rand_next_event <= summand + (pnode->cell_count * pnode->birth_rate) )
     {
       rand_mut_occur = gsl_ran_flat(gp.rng, 0, 1);
       // Condition to determine if mutation occurs in new daughter
@@ -267,7 +270,7 @@ void CloneList::AdvanceState(double curr_time, double next_time)
         new_mut_node->driver_count = pnode->driver_count;
         new_mut_node->subclone_count = 0;
         new_mut_node->cell_count = 1;
-        new_mut_node->allele_count = 0;
+        new_mut_node->allele_count = 1;
         new_mut_node->clone_time = curr_time + next_time;
         new_mut_node->mut_count = pnode->mut_count + 1;
         new_mut_node->is_driver = false;
@@ -285,47 +288,52 @@ void CloneList::AdvanceState(double curr_time, double next_time)
         num_clones++;
         num_mutations++;
 
-        currnode = pnode;
-        pnode = new_mut_node;
+        currnode = new_mut_node;
         // add allele count to all ancestors
-        if(gp.count_alleles) ChangeAncestorAllele(pnode, true);
+        if(gp.count_alleles)
+        {
+          ChangeAncestorAllele(new_mut_node, true);
+        }
       }
       else // no mutation, increment clone by 1
       {
         pnode->cell_count++;
         tot_cell_count++;
-        if(gp.count_alleles) ChangeAncestorAllele(pnode, true);
         tot_rate = tot_rate + (pnode->birth_rate) + (pnode->death_rate);
+        currnode = pnode;
+        if(gp.count_alleles) ChangeAncestorAllele(pnode, true);
+        // Reprioritize clone based on size by moving to left
+        CloneSort(pnode, true);
       }
-
-      // Reprioritize clone based on size by moving to left
-      CloneSort(pnode, true);
 
       flag = true;
       break;
-
     }
     // Condition if a death occurs
-    if(rand_next_event <= summand + (pnode->cell_count) * ((pnode->birth_rate) + (pnode->death_rate)) )
+    if(rand_next_event <= summand + (pnode->cell_count * (pnode->birth_rate + pnode->death_rate) ) )
     {
       // Death occurs
       pnode->cell_count = pnode->cell_count - 1;
       tot_cell_count = tot_cell_count - 1;
+      tot_rate = tot_rate - pnode->birth_rate - pnode->death_rate;
+      currnode = pnode;
       // decrease allele count in ancestors
       if(gp.count_alleles) ChangeAncestorAllele(pnode, false);
-      tot_rate = tot_rate - pnode->birth_rate - pnode->death_rate;
 
+      /* Couldn't figure out issue
       // Clean up of clones with zero to speed up later runs
       if(pnode->cell_count == 0)
       {
+        struct clone *zeronode;
+        zeronode = pnode;
         // remove pnode by attaching it to deadlist
-        CutNodeOut(pnode);
-        flag = true;
-        break;
+        CutNodeOut(zeronode);
       }
+      */
 
       // sort by moving to the right until fits
       CloneSort(pnode, false);
+
       flag = true;
       break;
 
@@ -398,10 +406,7 @@ void CloneList::NewCloneFitMut::operator()(struct clone *new_clone, struct clone
     }
     new_clone->mut_prob = fmin(1, parent_clone->mut_prob + additional_mut_prob);
   }
-  else
-  {
-    new_clone->mut_prob = parent_clone->mut_prob;
-  }
+
   // Insert new clone
   cl.InsertNode(new_clone, 1);
 }
@@ -414,8 +419,6 @@ void CloneList::NewCloneFitMut::operator()(struct clone *new_clone, struct clone
 void CloneList::NewClonePunct::operator()(struct clone *new_clone, struct clone *parent_clone)
 {
   int number_mutations = 1;
-  new_clone->death_rate = parent_clone->death_rate;
-  new_clone->birth_rate = parent_clone->birth_rate;
   // generation of punctuated number of mutations
   double rand_punct = gsl_ran_flat(gp.rng, 0, 1);
   double rand_advantage = 0;
@@ -435,6 +438,8 @@ void CloneList::NewClonePunct::operator()(struct clone *new_clone, struct clone 
       new_clone->driver_count++;
       new_clone->is_driver = true;
       did_count_driver = true;
+      new_clone->birth_rate = fmax(0, additional_rate + new_clone->birth_rate);
+
       if(rand_punct < punct_params.punctuated_prob)
       {
         additional_rate = additional_rate * punct_params.punctuated_multiplier;
@@ -445,8 +450,12 @@ void CloneList::NewClonePunct::operator()(struct clone *new_clone, struct clone 
         }
         else
         {
-          new_clone->death_rate = fmax(0, additional_rate + parent_clone->death_rate);
+          new_clone->death_rate = fmax(0, additional_rate + new_clone->death_rate);
         }
+      }
+      else
+      {
+        new_clone->birth_rate = fmax(0, additional_rate + new_clone->birth_rate);
       }
     }
   }
@@ -459,12 +468,9 @@ void CloneList::NewClonePunct::operator()(struct clone *new_clone, struct clone 
       if(!did_count_driver) new_clone->driver_count++;
       new_clone->is_driver = true;
     }
-    new_clone->mut_prob = fmin(1, parent_clone->mut_prob + additional_mut_prob);
+    new_clone->mut_prob = fmin(1, new_clone->mut_prob + additional_mut_prob);
   }
-  else
-  {
-    new_clone->mut_prob = parent_clone->mut_prob;
-  }
+
   // Insert new clone
   cl.InsertNode(new_clone, number_mutations);
 }
@@ -748,42 +754,52 @@ void CloneList::TreeTrim(double threshold, int max_pop)
   }
 }
 
-/*
+/****  CURRENTLY NOT USED ****
   When a node hits 0 count, move to dead side of list
   if at end of list, no need to link the next node (NULL value), Otherwise
   cut out value
 */
 void CloneList::CutNodeOut(clone* zeronode)
 {
-  if(zeronode->nextnode != NULL)
+  if(zeronode->prevnode == NULL) // if root
   {
-    zeronode->nextnode->prevnode = zeronode->prevnode;
-  }
-  /* if at beginning of list, need to reroot the list to the next node
-     otherwise, cut out node*/
-  if(zeronode->prevnode != NULL)
-  {
-    zeronode->prevnode->nextnode = zeronode->nextnode;
+    if(zeronode->nextnode == NULL)
+    {
+      root = NULL;
+    }
+    else
+    {
+      root = zeronode->nextnode;
+      root->prevnode = NULL;
+    }
   }
   else
   {
-    root = zeronode->nextnode;
+    if(zeronode->nextnode != NULL)
+    {
+      zeronode->nextnode->prevnode = zeronode->prevnode;
+      zeronode->prevnode->nextnode = zeronode->nextnode;
+    }
+    else
+    {
+      zeronode->prevnode->nextnode = NULL;
+    }
   }
 
-  /* if dead size not rooted, root with first zero node,
-     otherwise add to end of list*/
+  // if dead not rooted, root with first zero node,
+  //   otherwise add to end of list
   if( deadroot == NULL)
   {
     deadroot = zeronode;
-    currdeadnode = zeronode;
+    zeronode->prevnode = NULL;
   }
   else
   {
     zeronode->prevnode = currdeadnode;
     currdeadnode->nextnode = zeronode;
-    currdeadnode = zeronode;
-    zeronode->nextnode = NULL;
   }
+  currdeadnode = zeronode;
+  zeronode->nextnode = NULL;
 }
 
 // This function used for TreeTrim to remove nodes that are too small

@@ -496,6 +496,7 @@ int main(int argc, char *argv[])
             (population.tot_cell_count > 0) &&
             (current_time < gp.tot_life) )
     {
+      //std::cout << current_time << "\n";
       // Get next event time by advancing with adaptive thinning
       rand_next_time = population.AdvanceTime(current_time);
 
@@ -533,7 +534,8 @@ int main(int argc, char *argv[])
     {
       population.DeleteList();
       count_extinct++;
-      sim = sim - 1;
+      gp.num_sims++; // increase number of sims
+      std::cout << "Population went extinct. Restarting.\n";
       continue;
     }
 
