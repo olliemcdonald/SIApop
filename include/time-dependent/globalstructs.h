@@ -58,6 +58,7 @@ struct TimeDependentParameters
 {
   int type;
   double homogeneous_rate;
+  double additional_rate;
   std::vector<double> coefs;
 };
 

@@ -37,7 +37,7 @@ void CloneList::init()
 // InsertNode attaches the newly created node (in NewClone) to the end of the
 // linked list. Number of mutations was included for the punctuated scenario
 // to add to the ID.
-void CloneList::InsertNode(clone* newnode, int number_mutations)
+void CloneList::InsertNode(clone* newnode, clone* parentnode, int number_mutations)
 {
   num_clones++;
 
@@ -68,7 +68,7 @@ void CloneList::InsertNode(clone* newnode, int number_mutations)
     // append new id to list of ancestors
     newnode->clone_id = newnode->clone_id + add_id;
     newnode->nextnode = NULL;
-    newnode->parent = currnode;
+    newnode->parent = parentnode;
 
     // move to end of list to attach newnode to the end
     while (currnode->nextnode != NULL)
@@ -356,21 +356,21 @@ void CloneList::AdvanceState(double curr_time, double next_time)
         num_clones++;
         num_mutations++;
 
-        currnode = pnode;
+
         pnode = new_mut_node;
         // add allele count to all ancestors
-        if(gp.count_alleles) ChangeAncestorAllele(pnode, true);
+
       }
       else // no mutation, increment clone by 1
       {
         pnode->cell_count++;
         tot_cell_count++;
-        if(gp.count_alleles) ChangeAncestorAllele(pnode, true);
         // Add to homogeneous process that undergoes thinning
         tot_rate_homog = tot_rate_homog + pnode->birth_params.homogeneous_rate +
           pnode->death_params.homogeneous_rate;
       }
 
+      if(gp.count_alleles) ChangeAncestorAllele(pnode, true);
       // Reprioritize clone based on size by moving to left
       CloneSort(pnode, true);
 
@@ -432,7 +432,7 @@ void CloneList::AdvanceState(double curr_time, double next_time)
 */
 void CloneList::NewCloneNoParams::operator()(struct clone *new_clone, struct clone *parent_clone)
 {
-  cl.InsertNode(new_clone, 1);
+  cl.InsertNode(new_clone, parent_clone, 1);
 }
 
 /*
@@ -459,6 +459,7 @@ void CloneList::NewCloneFitMut::operator()(struct clone *new_clone, struct clone
       new_clone->is_driver = true;
     }
     new_clone->birth_params.homogeneous_rate = fmax(0, additional_rate + new_clone->birth_params.homogeneous_rate);
+    new_clone->birth_params.additional_rate = fmax(0, additional_rate + new_clone->birth_params.additional_rate);
   }
 
   if(mut_params.is_mutator)
@@ -481,7 +482,7 @@ void CloneList::NewCloneFitMut::operator()(struct clone *new_clone, struct clone
   (new_clone->B).params = &(new_clone->birth_params);
   (new_clone->D).params = &(new_clone->death_params);
 
-  cl.InsertNode(new_clone, 1);
+  cl.InsertNode(new_clone, parent_clone, 1);
 }
 
 /*
@@ -523,10 +524,12 @@ void CloneList::NewClonePunct::operator()(struct clone *new_clone, struct clone 
         if( rand_advantage < punct_params.punctuated_advantageous_prob )
         {
           new_clone->birth_params.homogeneous_rate = fmax(0, additional_rate + new_clone->birth_params.homogeneous_rate);
+          new_clone->birth_params.additional_rate = fmax(0, additional_rate + new_clone->birth_params.additional_rate);
         }
         else
         {
           new_clone->death_params.homogeneous_rate = fmax(0, additional_rate + new_clone->death_params.homogeneous_rate);
+          new_clone->death_params.additional_rate = fmax(0, additional_rate + new_clone->death_params.additional_rate);
         }
       }
     }
@@ -553,7 +556,7 @@ void CloneList::NewClonePunct::operator()(struct clone *new_clone, struct clone 
   (new_clone->D).params = &(new_clone->death_params);
   // end of update rates
 
-  cl.InsertNode(new_clone, number_mutations);
+  cl.InsertNode(new_clone, parent_clone, number_mutations);
 }
 
 /*
@@ -604,7 +607,7 @@ void CloneList::NewCloneEpi::operator()(struct clone *new_clone, struct clone *p
   (new_clone->D).params = &(new_clone->death_params);
   // end of update rates
 
-  cl.InsertNode(new_clone, 1);
+  cl.InsertNode(new_clone, parent_clone, 1);
 }
 
 /*
@@ -612,7 +615,7 @@ void CloneList::NewCloneEpi::operator()(struct clone *new_clone, struct clone *p
 */
 void CloneList::NewCloneCustom::operator()(struct clone *new_clone, struct clone *parent_clone)
 {
-  cl.InsertNode(new_clone, 1);
+  cl.InsertNode(new_clone, parent_clone, 1);
 }
 
 /*
@@ -705,7 +708,7 @@ void CloneList::Traverse(std::ofstream &F, int sim_number, double obs_time, bool
              obs_time << "\t" <<
              pnode->clone_id << "\t" <<
              pnode->cell_count << "\t" << pnode->allele_count << "\t" <<
-             pnode->birth_params.homogeneous_rate - pnode->death_params.homogeneous_rate << "\t" <<
+             GSL_FN_EVAL(&(pnode->B), obs_time) - GSL_FN_EVAL(&(pnode->D), obs_time) << "\t" <<
              pnode->clone_time << "\t";
 
         if(pnode->parent == NULL)
@@ -714,7 +717,7 @@ void CloneList::Traverse(std::ofstream &F, int sim_number, double obs_time, bool
         }
         else
         {
-          F << pnode->parent->birth_params.homogeneous_rate - pnode->parent->death_params.homogeneous_rate << "\t" <<
+          F << GSL_FN_EVAL(&(pnode->parent->B), obs_time) - GSL_FN_EVAL(&(pnode->parent->D), obs_time) << "\t" <<
                pnode->parent->clone_time << "\n";
         }
       }
@@ -727,7 +730,7 @@ void CloneList::Traverse(std::ofstream &F, int sim_number, double obs_time, bool
              obs_time << "\t" <<
              pnode->clone_id << "\t" <<
              pnode->cell_count << "\t" <<
-             pnode->birth_params.homogeneous_rate - pnode->death_params.homogeneous_rate << "\t" <<
+             GSL_FN_EVAL(&(pnode->B), obs_time) - GSL_FN_EVAL(&(pnode->D), obs_time) << "\t" <<
              pnode->clone_time << "\t";
 
         if(pnode->parent == NULL)
@@ -736,7 +739,7 @@ void CloneList::Traverse(std::ofstream &F, int sim_number, double obs_time, bool
         }
         else
         {
-          F << pnode->parent->birth_params.homogeneous_rate - pnode->parent->death_params.homogeneous_rate << "\t" <<
+          F << GSL_FN_EVAL(&(pnode->parent->B), obs_time) - GSL_FN_EVAL(&(pnode->parent->D), obs_time) << "\t" <<
                pnode->parent->clone_time << "\n";
         }
       }
@@ -752,7 +755,7 @@ void CloneList::Traverse(std::ofstream &F, int sim_number, double obs_time, bool
              obs_time << "\t" <<
              pnode->clone_id << "\t" <<
              pnode->cell_count << "\t" << pnode->allele_count << "\t" <<
-             pnode->birth_params.homogeneous_rate - pnode->death_params.homogeneous_rate << "\t" <<
+             GSL_FN_EVAL(&(pnode->B), obs_time) - GSL_FN_EVAL(&(pnode->D), obs_time) << "\t" <<
              pnode->clone_time << "\n";
       }
     }
@@ -764,7 +767,7 @@ void CloneList::Traverse(std::ofstream &F, int sim_number, double obs_time, bool
              obs_time << "\t" <<
              pnode->clone_id << "\t" <<
              pnode->cell_count << "\t" <<
-             pnode->birth_params.homogeneous_rate - pnode->death_params.homogeneous_rate << "\t" <<
+             GSL_FN_EVAL(&(pnode->B), obs_time) - GSL_FN_EVAL(&(pnode->D), obs_time) << "\t" <<
              pnode->clone_time << "\n";
       }
     }

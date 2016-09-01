@@ -23,8 +23,9 @@
 double RateFunctions::constant(double t, void *p)
 {
   struct TimeDependentParameters *params = (struct TimeDependentParameters *)p;
+  double additional_rate = params->additional_rate;
   double a = params->coefs[0];
-  double y = a;
+  double y = additional_rate + a;
 
   return y;
 }
@@ -33,12 +34,13 @@ double RateFunctions::linear(double t, void *p)
 {
   struct TimeDependentParameters *params = (struct TimeDependentParameters *)p;
 
+  double additional_rate = params->additional_rate;
   double a = params->coefs[0];
   double b = params->coefs[1];
   double min = params->coefs[2];
 
   double y = (a + t * b);
-  y = GSL_MAX(y, min);
+  y = additional_rate + GSL_MAX(y, min);
   return y;
 }
 
@@ -46,6 +48,7 @@ double RateFunctions::logistic(double t, void *p)
 {
   struct TimeDependentParameters *params = (struct TimeDependentParameters *)p;
 
+  double additional_rate = params->additional_rate;
   double A = params->coefs[0];
   double K = params->coefs[1];
   double B = params->coefs[2];
@@ -53,7 +56,8 @@ double RateFunctions::logistic(double t, void *p)
   double Q = params->coefs[4];
   double M = params->coefs[5];
 
-  double y = (A + (K - A) / pow(1 + Q * exp(-B * (t-M)), 1 / nu) );
+  double y = additional_rate +
+    (A + (K - A) / pow(1 + Q * exp(-B * (t-M)), 1 / nu) );
   return y;
 }
 
@@ -62,11 +66,13 @@ double RateFunctions::Gompertz(double t, void *p)
 {
   struct TimeDependentParameters *params = (struct TimeDependentParameters *)p;
 
+  double additional_rate = params->additional_rate;
   double asymptote = params->coefs[0];
   double alpha = params->coefs[1];
   double beta = params->coefs[2];
 
-  double y = (asymptote + beta * exp(- alpha * t));
+  double y = additional_rate +
+    (asymptote + beta * exp(- alpha * t));
   return y;
 }
 
@@ -74,9 +80,13 @@ double RateFunctions::Gompertz(double t, void *p)
 double RateFunctions::custom(double t, void *p)
 {
   struct TimeDependentParameters *params = (struct TimeDependentParameters *)p;
-  double a = params->coefs[0];
+  double additional_rate = params->additional_rate;
 
-  double y = a;
+  double a = params->coefs[0];
+  double b = params->coefs[1];
+  double c = params->coefs[2];
+  // currently a cosine function just for fun
+  double y = additional_rate + a + b * cos(c * t);
   return y;
 }
 

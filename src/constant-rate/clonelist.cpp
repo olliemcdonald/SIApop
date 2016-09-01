@@ -36,7 +36,7 @@ void CloneList::init()
 // InsertNode attaches the newly created node (in NewClone) to the end of the
 // linked list. Number of mutations was included for the punctuated scenario
 // to add to the ID.
-void CloneList::InsertNode(clone* newnode, int number_mutations)
+void CloneList::InsertNode(clone* newnode, clone* parentnode, int number_mutations)
 {
   num_clones++;
 
@@ -67,7 +67,7 @@ void CloneList::InsertNode(clone* newnode, int number_mutations)
     // append new id to list of ancestors
     newnode->clone_id = newnode->clone_id + add_id;
     newnode->nextnode = NULL;
-    newnode->parent = currnode;
+    newnode->parent = parentnode;
 
     // move to end of list to attach newnode to the end
     while (currnode->nextnode != NULL)
@@ -367,7 +367,7 @@ void CloneList::AdvanceState(double curr_time, double next_time)
 void CloneList::NewCloneNoParams::operator()(struct clone *new_clone, struct clone *parent_clone)
 {
   // Do Nothing - nothing happens in this case
-  cl.InsertNode(new_clone, 1);
+  cl.InsertNode(new_clone, parent_clone, 1);
 }
 
 /*
@@ -408,7 +408,7 @@ void CloneList::NewCloneFitMut::operator()(struct clone *new_clone, struct clone
   }
 
   // Insert new clone
-  cl.InsertNode(new_clone, 1);
+  cl.InsertNode(new_clone, parent_clone, 1);
 }
 
 /*
@@ -472,7 +472,7 @@ void CloneList::NewClonePunct::operator()(struct clone *new_clone, struct clone 
   }
 
   // Insert new clone
-  cl.InsertNode(new_clone, number_mutations);
+  cl.InsertNode(new_clone, parent_clone, number_mutations);
 }
 
 /*
@@ -516,7 +516,7 @@ void CloneList::NewCloneEpi::operator()(struct clone *new_clone, struct clone *p
     new_clone->mut_prob = parent_clone->mut_prob;
   }
   // Insert new clone
-  cl.InsertNode(new_clone, 1);
+  cl.InsertNode(new_clone, parent_clone, 1);
 }
 
 /*
@@ -527,7 +527,7 @@ void CloneList::NewCloneCustom::operator()(struct clone *new_clone, struct clone
   // Insert custom code here for how to update a new clone
 
   // End with this piece - Insert new clone
-  cl.InsertNode(new_clone, 1);
+  cl.InsertNode(new_clone, parent_clone, 1);
 }
 
 /*

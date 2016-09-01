@@ -188,11 +188,13 @@ int main(int argc, char *argv[])
   params.convert("birth_function", td_birth_params.type);
   params.ParseVector("td_birth_params", td_birth_params.coefs);
   td_birth_params.homogeneous_rate = 1;
+  td_birth_params.additional_rate = 0;
 
   TimeDependentParameters td_death_params;
   params.convert("death_function", td_death_params.type);
   params.ParseVector("td_death_params", td_death_params.coefs);
   td_death_params.homogeneous_rate = 1;
+  td_death_params.additional_rate = 0;
 
   /*
     END OF VARIABLE INPUT AND CONVERSION

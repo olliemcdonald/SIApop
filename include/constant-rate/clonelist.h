@@ -129,7 +129,7 @@ public:
   // Next Step Functions
   double AdvanceTime(double curr_time);
   void AdvanceState(double curr_time, double next_time);
-  void InsertNode(clone* newnode, int number_mutations);
+  void InsertNode(clone* newnode, clone* parentnode, int number_mutations);
   void InsertAncestor(clone* ancestor);
 
   // Linked List Manipulation Functions
