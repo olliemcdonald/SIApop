@@ -7,8 +7,8 @@ CC := g++ # This is the main compiler
 
 SRCDIR := src
 BUILDDIR := build
-TARGET:= bin/BDsim
-TARGET-TD := bin/BDsim-td
+TARGET:= bin/SIApop
+TARGET-TD := bin/SIApop-td
 SRCEXT := cpp
 
 FOLDER := constant-rate

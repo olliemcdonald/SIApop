@@ -1,12 +1,12 @@
 /*
  * =============================================================================
  *
- *       Filename:  BDsim.cpp
+ *       Filename:  SIApop.cpp
  *
- *    Description: Time-Dependent Birth-Death-Mutation process simulation for
- *                 infinite-allele model with random fitness contributions using
- *                 Gillespie Algorithm. Imports data, runs SSA and outputs to
- *                 designated folder.
+ *    Description: Birth-Death-Mutation process simulation for infinite-allele
+ *                 model with random fitness contributions using Gillespie
+ *                 Algorithm. Imports data, runs SSA and outputs to designated
+ *                 folder.
  *
  *        Version:  1.0
  *        Created:  08/24/2016 16:50:27
@@ -30,25 +30,17 @@
 #include "globalstructs.h"
 #include "clonelist.h"
 #include "parameterlist.h"
-#include "ratefunctions.h"
 
 // structure contains all global parameters used in multiple source files
 GlobalParameters gp;
-// Function array for different time-dependent function types
-RateFunctionsPtr rate_function_array[] = {&RateFunctions::constant,
-  &RateFunctions::linear, &RateFunctions::logistic,
-  &RateFunctions::Gompertz, &RateFunctions::custom};
-gsl_integration_workspace *workspace = gsl_integration_workspace_alloc(1000);
-// Pointer to Function class which will point to an instance of one based on parameters
+// Function class ptr defined in main() but used in clonelist.cpp
 CloneList::NewCloneFunction* NewClone;
 
 int main(int argc, char *argv[])
 {
-  // timer for total simulation time - FOR TESTING
-  auto t1 = std::chrono::high_resolution_clock::now();
 
-  // track total error from integration - FOR TESTING
-  gp.tot_error = 0;
+  // for timing total simulation - FOR TESTING
+  auto t1 = std::chrono::high_resolution_clock::now();
 
   //  declaring random number generator and setting seed
   gp.rng = gsl_rng_alloc(gsl_rng_mt19937);
@@ -63,14 +55,18 @@ int main(int argc, char *argv[])
   // default output is current directory
   const char *output_folder = "./";
 
-  for (int i = 1; i < argc; i++) {
+  for (int i = 1; i < argc; i++)
+  {
     if (i + 1 != argc)
-    { // Check that haven't finished parsing arguments
-        if (strcmp(argv[i], "-in") == 0) { // input file
+    { // Check that we haven't finished parsing arguments
+        if (strcmp(argv[i], "-in") == 0) // input file
+        {
           input_params = argv[i + 1];
-        } else if (strcmp(argv[i], "-out") == 0) { // output file
+        } else if (strcmp(argv[i], "-out") == 0) // output location
+        {
           output_folder = argv[i + 1];
-        } else if (strcmp(argv[i], "-anc") == 0) { // ancestor file
+        } else if (strcmp(argv[i], "-anc") == 0) // ancestor file
+        {
           ancestor_file = argv[i + 1];
         }
     }
@@ -89,6 +85,7 @@ int main(int argc, char *argv[])
   // declare and initialize parameter list for simulation
   ParameterList params;
   params.init();
+
 
   // parsing through the input file and converting/adding to parameter list
   if( input_params != NULL )
@@ -140,6 +137,8 @@ int main(int argc, char *argv[])
   params.convert("allow_extinction", gp.allow_extinction);
   params.convert("trace_ancestry", gp.trace_ancestry);
   params.convert("count_alleles", gp.count_alleles);
+  params.convert("birth_rate", gp.birth_rate);
+  params.convert("death_rate", gp.death_rate);
   params.convert("mutation_prob", gp.mutation_prob);
 
   FitnessParameters fit_params;
@@ -174,6 +173,7 @@ int main(int argc, char *argv[])
   params.convert("punctuated_advantageous_prob", punct_params.punctuated_advantageous_prob);
   punct_params.is_punctuated = punct_params.punctuated_prob > 0;
 
+
   EpistaticParameters epi_params;
   params.convert("epistatic_mutation_thresh", epi_params.epistatic_mutation_thresh);
   params.convert("epistatic_multiplier", epi_params.epistatic_multiplier);
@@ -182,23 +182,10 @@ int main(int argc, char *argv[])
   {
     epi_params.is_epistasis = false;
   }
-
-
-  TimeDependentParameters td_birth_params;
-  params.convert("birth_function", td_birth_params.type);
-  params.ParseVector("td_birth_params", td_birth_params.coefs);
-  td_birth_params.homogeneous_rate = 1;
-  td_birth_params.additional_rate = 0;
-
-  TimeDependentParameters td_death_params;
-  params.convert("death_function", td_death_params.type);
-  params.ParseVector("td_death_params", td_death_params.coefs);
-  td_death_params.homogeneous_rate = 1;
-  td_death_params.additional_rate = 0;
-
   /*
     END OF VARIABLE INPUT AND CONVERSION
   */
+
 
   // declare and open other output streams for time and end of sim clone list
   std::ofstream clonedata;
@@ -254,9 +241,8 @@ int main(int argc, char *argv[])
     sprintf(fn, "%s/sampledata.txt", output_folder);
     sample_data.open(fn);
     sample_data.setf(std::ios::fixed);
-    sample_data << "run\tsample_number\tunique_id\tnumber_observed\n";
+    sample_data << "run\tsample_number\tunique_id\tnumber_obs\n";
   }
-
 
   // set RNG seed
   gsl_rng_set(gp.rng, gp.seed);
@@ -269,7 +255,7 @@ int main(int argc, char *argv[])
   double rand_next_time;
   int count_extinct = 0;
 
-  // Beginning of simulation that has "sim" number of runs.
+  // Beginning of simulation that has "sim" number of runs
   for (int sim = 1; sim <= gp.num_sims; sim++)
   {
     // initialize time to zero
@@ -307,34 +293,15 @@ int main(int argc, char *argv[])
       NewClone = new CloneList::NewCloneNoParams(population);
     }
 
-
     if( ancestor_file == NULL ) // if no ancestor file exists
     {
-      /*
-        total rate for time-homogeneous population should be the max for the
-        birth and death functions times their associated birth rates times
-        the number of ancestors
-      */
-      gsl_function B_max;
-      gsl_function D_max;
-      B_max.function = rate_function_array[td_birth_params.type];
-      D_max.function = rate_function_array[td_death_params.type];
-      B_max.params = &td_birth_params;
-      D_max.params = &td_death_params;
-
-      // crude global max finder just to give us a homogeneous rate value
-      td_birth_params.homogeneous_rate = MaximizeRate(B_max, gp.start_time, gp.tot_life, 1000);
-      td_death_params.homogeneous_rate = MaximizeRate(D_max, gp.start_time, gp.tot_life, 1000);
-      std::cout << "default max birth rate:\t" << td_birth_params.homogeneous_rate << "\t" <<
-                   "default max death rate:\t" << td_death_params.homogeneous_rate << "\n";
-
-
-      population.tot_rate_homog = (td_birth_params.homogeneous_rate +
-        td_death_params.homogeneous_rate) * gp.ancestors * gp.ancestor_clones;
+      // total rate for SSA is equal to number of individuals alive times
+      // respective rates
+      population.tot_rate = (gp.birth_rate + gp.death_rate) * gp.ancestors * gp.ancestor_clones;
       population.tot_cell_count = gp.ancestors * gp.ancestor_clones;
 
       // go through all ancestors and initialize clones for each
-      for(int ance_clone_count = 1; ance_clone_count <= gp.ancestor_clones; ance_clone_count++)
+      for(int ance__clone_count = 1; ance__clone_count <= gp.ancestor_clones; ance__clone_count++)
       {
         // Create Ancestor Node
         struct clone* ancestor;
@@ -342,6 +309,8 @@ int main(int argc, char *argv[])
 
         ancestor->cell_count = gp.ancestors;
         ancestor->allele_count = gp.ancestors;
+        ancestor->birth_rate = gp.birth_rate;
+        ancestor->death_rate = gp.death_rate;
         ancestor->mut_prob = gp.mutation_prob;
         ancestor->clone_time = current_time;
         ancestor->subclone_count = 0;
@@ -349,26 +318,13 @@ int main(int argc, char *argv[])
         ancestor->driver_count = 0;
         ancestor->is_driver = false;
 
-        // input default types
-        ancestor->birth_params = td_birth_params;
-        ancestor->death_params = td_death_params;
-        (ancestor->B).function = rate_function_array[td_birth_params.type];
-        (ancestor->D).function = rate_function_array[td_death_params.type];
-        (ancestor->B).params = &(ancestor->birth_params);
-        (ancestor->D).params = &(ancestor->death_params);
-
-        // initializing the rate accumulation values
-        ancestor->birth_rate = 0;
-        ancestor->death_rate = 0;
-
         population.InsertAncestor(ancestor);
       }
     }
     else // ancestor file exists to read from
     {
-      std::cout << "Reading ancestor file...\n";
+      std::cout << "Reading ancestor file...";
 
-      population.tot_rate_homog = 0;
       population.tot_rate = 0;
       population.tot_cell_count = 0;
 
@@ -410,6 +366,8 @@ int main(int argc, char *argv[])
             ancestor->clone_id = !ancestor_map["unique_id"].empty() ? ancestor_map["unique_id"] : "";
             ancestor->cell_count = !ancestor_map["numcells"].empty() ? stoi(ancestor_map["numcells"]) : 0;
             ancestor->allele_count = ancestor->cell_count;
+            ancestor->birth_rate = !ancestor_map["birthrate"].empty() ? stof(ancestor_map["birthrate"]) : gp.birth_rate;
+            ancestor->death_rate = !ancestor_map["deathrate"].empty() ? stof(ancestor_map["deathrate"]) : gp.death_rate;
             ancestor->mut_prob = !ancestor_map["mutprob"].empty() ? stof(ancestor_map["mutprob"]) : gp.mutation_prob;
             ancestor->clone_time = !ancestor_map["initialtime"].empty() ? stof(ancestor_map["initialtime"]) : current_time;
             ancestor->subclone_count = !ancestor_map["subclone_count"].empty() ? stoi(ancestor_map["subclone_count"]) : 0;
@@ -417,70 +375,9 @@ int main(int argc, char *argv[])
             ancestor->driver_count = !ancestor_map["num_drivers"].empty() ? stoi(ancestor_map["num_drivers"]) : 0;
             ancestor->is_driver = !ancestor_map["is_driver"].empty() ? stoi(ancestor_map["is_driver"]) : false;
 
-            ancestor->birth_params.type = !ancestor_map["birth_function"].empty() ? stoi(ancestor_map["birth_function"]) : td_birth_params.type;
-            ancestor->death_params.type = !ancestor_map["death_function"].empty() ? stoi(ancestor_map["death_function"]) : td_death_params.type;
-
-            if(!ancestor_map["bf_params"].empty()) // If the ancestor file contains a parameter list, parse and add to function
-            {
-              std::string bf_input = ancestor_map["bf_params"];
-              std::istringstream ss(bf_input);
-              std::string token;
-              double value;
-              while(getline(ss, token, ','))
-              {
-                value = stof(token);
-                ancestor->birth_params.coefs.push_back(value);
-              }
-              // Add params to birth function
-              (ancestor->B).params = &(ancestor->birth_params);
-
-            }
-            else // Use defaults if not present
-            {
-              ancestor->birth_params = td_birth_params;
-              (ancestor->B).params = &(ancestor->birth_params);
-            }
-            (ancestor->B).function = rate_function_array[ancestor->birth_params.type];
-
-
-            if(!ancestor_map["df_params"].empty())
-            {
-              std::string df_input = ancestor_map["df_params"];
-              std::istringstream ss(df_input);
-              std::string token;
-              double value;
-              while(getline(ss, token, ','))
-              {
-                value = stof(token);
-                ancestor->death_params.coefs.push_back(value);
-              }
-              (ancestor->D).params = &(ancestor->death_params);
-            }
-            else
-            {
-              ancestor->death_params = td_death_params;
-              (ancestor->D).params = &(ancestor->death_params);
-            }
-            (ancestor->D).function = rate_function_array[ancestor->death_params.type];
-
-            // crude global max finder just to give us a homogeneous rate value
-            ancestor->birth_params.homogeneous_rate = MaximizeRate((ancestor->B), gp.start_time, gp.tot_life, 1000);
-            //(ancestor->B).params = &(ancestor->birth_params);
-            ancestor->death_params.homogeneous_rate = MaximizeRate((ancestor->D), gp.start_time, gp.tot_life, 1000);
-            //(ancestor->D).params = &(ancestor->death_params);
-
-            std::cout << "ancestor " << ancestor->clone_id << " max birth rate:\t" << ancestor->birth_params.homogeneous_rate << "\t" <<
-                         "ancestor " << ancestor->clone_id << " max death rate:\t" << ancestor->death_params.homogeneous_rate << "\n";
-
-
-            ancestor->birth_rate = ancestor->cell_count * ancestor->birth_params.homogeneous_rate;
-            ancestor->death_rate = ancestor->cell_count * ancestor->death_params.homogeneous_rate;
-
             population.InsertAncestor(ancestor);
 
-            population.tot_rate_homog = population.tot_rate_homog +
-                (ancestor->birth_params.homogeneous_rate + ancestor->death_params.homogeneous_rate) *
-                ancestor->cell_count;
+            population.tot_rate = population.tot_rate + (ancestor->birth_rate + ancestor->death_rate) * ancestor->cell_count;
             population.tot_cell_count = population.tot_cell_count + ancestor->cell_count;
 
             ancestor_map.clear();
@@ -491,15 +388,14 @@ int main(int argc, char *argv[])
 
     std::cout << "Output Ancestor Population...";
     population.Traverse(timedata, sim, current_time, gp.trace_ancestry, gp.count_alleles);
-    std::cout << "Initial Traverse Done\n";
+    std::cout << "Ancestor Output Written...\n";
 
     // Begin single simulation with while loop that exists when hit max time, max pop, or extinction
     while ( (population.tot_cell_count < gp.max_pop) &&
             (population.tot_cell_count > 0) &&
             (current_time < gp.tot_life) )
     {
-      //std::cout << current_time << "\n";
-      // Get next event time by advancing with adaptive thinning
+      // Advance Simulation Time (choose next event time)
       rand_next_time = population.AdvanceTime(current_time);
 
       // Advance Simulation State (choose next event)
@@ -541,7 +437,7 @@ int main(int argc, char *argv[])
       continue;
     }
 
-    // If simulation made it to the gp.max_pop in the alotted time
+    // If simulation made it to the max_pop in the alotted time
     if( (population.tot_cell_count >= gp.max_pop) &&
         (current_time < gp.tot_life) )
     {
@@ -567,15 +463,14 @@ int main(int argc, char *argv[])
 
   }
 
-  //avg_sim_endtime = avg_sim_endtime * (double)num_sims / (double)count_detect;
+  //avg_sim_endtime = avg_sim_endtime * (double)gp.num_sims / (double)count_detect;
 
   gsl_rng_free(gp.rng);
   delete NewClone;
 
   sim_stats << "avg_sim_endtime, " << avg_sim_endtime << "\n" <<
                "count_detect, " << count_detect << "\n" <<
-               "count_extinct, " << count_extinct  << "\n" <<
-               "tot_integration_error, " << gp.tot_error;
+               "count_extinct, " << count_extinct  << "\n";
 
   clonedata.close();
   timedata.close();
