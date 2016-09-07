@@ -5,7 +5,7 @@ SIApop simulates birth-death-mutation processes with mutations having random fit
 
 Implementation is in Terminal with the following command:
 
-    ./SIApop -in ./inputfile.txt -anc ./ancestors.txt –out ./results/
+    ./SIApop -in ./inputfile.txt -anc ./ancestors.txt -out ./results/
 
 
 Features
@@ -209,4 +209,4 @@ If you are having issues, please let us know.
 License
 -------
 
-The project is licensed under the BSD license.
+The project is licensed under the ... license.

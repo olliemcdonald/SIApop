@@ -1,19 +1,18 @@
 # SIMULATION INPUTS - USE “#” TO COMMENT OUT LINES
 #
 # SIMULATION PARAMETERS
-tot_life, 100
-max_pop, 500000
-inputdata.txt
+tot_life, 10000
+max_pop, 100000
 ancestors, 10
-ancestor_clones, 5
-num_sims, 3
-observation_times, 1 10 15
+ancestor_clones, 1
+num_sims, 10
+# observation_times, 1 10 100 500 1000
 observation_frequency, 1
-allow_extinction, 1
+allow_extinction, 0
 detection_threshold, 0.0
-trace_ancestry, 0
-count_alleles, 0
+trace_ancestry, 1
+count_alleles, 1
 # RATE PARAMETERS
 birth_rate, 1.0
 death_rate, 0.5
-mutation_prob, 0.0001
+mutation_prob, 0.01

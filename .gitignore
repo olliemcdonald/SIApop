@@ -1,5 +1,6 @@
 # Ignore the buid and lib dirs
 build
+test
 lib/*
 
 # Ignore any executables
@@ -9,5 +10,5 @@ bin/*
 .DS_Store
 
 # Ignore Output files
-output/*
 results/*
+test/*
