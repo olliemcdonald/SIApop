@@ -283,7 +283,11 @@ int main(int argc, char *argv[])
     population.init();
 
     // Determine Advance function class to use based on the parameters
-    if( punct_params.is_punctuated )
+    if (gp.is_custom_model)
+    {
+      NewClone = new CloneList::NewCloneCustom(population);
+    }
+    else if( punct_params.is_punctuated )
     {
       NewClone = new CloneList::NewClonePunct(population, fit_params, mut_params, punct_params);
     }
@@ -298,11 +302,7 @@ int main(int argc, char *argv[])
         NewClone = new CloneList::NewCloneFitMut(population, fit_params, mut_params);
       }
     }
-    else /*if (gp.is_custom_model)
-    {
-      NewClone = new CloneList::NewCloneCustom(popoulation);
-    }
-    else*/
+    else
     {
       NewClone = new CloneList::NewCloneNoParams(population);
     }

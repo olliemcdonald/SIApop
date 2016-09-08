@@ -41,6 +41,7 @@ struct GlobalParameters
   double observation_frequency;
   double start_time;
   bool allow_extinction;
+  bool is_custom_model;
   double birth_rate;
   double death_rate;
   double mutation_prob;

@@ -46,6 +46,26 @@ double GenerateFitness(FitnessParameters fit_params)
   }
 }
 
+/*
+// For creating a custom distribution for fitness
+double GenerateFitness(FitnessParameters fit_params)
+{
+  double fitness;
+  double z = gsl_ran_flat(gp.rng, 0, 1);
+
+  if( z < fit_params.pass_prob )
+  {
+    return 0;
+  }
+  else
+  {
+    fitness = "favorite distribution";
+    return fitness;
+  }
+}
+*/
+
+
 // Function for generating the mutation probability from a beta distribution
 double GenerateMutationProb(MutationParameters mut_params)
 {

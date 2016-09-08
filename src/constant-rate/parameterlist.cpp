@@ -60,6 +60,7 @@ void ParameterList::init()
     insert(std::make_pair("ancestor_clones", "1"));
     insert(std::make_pair("num_sims", "1"));
     insert(std::make_pair("allow_extinction", "1"));
+    insert(std::make_pair("is_custom_model", "0"));
     insert(std::make_pair("num_samples", "0"));
     insert(std::make_pair("sample_size", "0"));
     insert(std::make_pair("detection_threshold", "0"));

@@ -1,5 +1,7 @@
 ---
 title: "Passenger Mutation Simulation"
+author: "Thomas O. McDonald and Franziska Michor"
+date: "September 7, 2016"
 output: html_document
 ---
 
