@@ -79,6 +79,7 @@ The input file is a 2-column tab-delimited file containing the following argumen
 | mutation_prob       | double [0, 1] | default mutation probability for new clone|
 | trace_ancestry      | bool (1/0)    | Track info on parent of each clone |
 | count_alleles       | bool (1/0)    | adds/subtracts and individual to allele_count of individual and all ancestors |
+| is_custom_model     | bool (1/0)    | indicates to use the custom model function for the function class NewClone (advanced)|
 
   FITNESS DISTRIBUTION PARAMETERS
 
