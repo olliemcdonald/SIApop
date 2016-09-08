@@ -175,4 +175,7 @@ if (gp.is_custom_model)
 }
 ```
 
+IMPORTANT NOTE: an input parameter `is_custom_model` should be set to 1 in the text
+file to indicate using the function NewCloneCustom.
+
 Again, recompiling the program is required after this modification.
