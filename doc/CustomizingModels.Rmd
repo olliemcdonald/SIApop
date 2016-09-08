@@ -2,7 +2,7 @@
 title: "Customizing Models"
 author: "Thomas O. McDonald and Franziska Michor"
 date: "September 7, 2016"
-output: html_document
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
