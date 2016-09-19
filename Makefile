@@ -7,6 +7,7 @@ CC := g++ # This is the main compiler
 
 SRCDIR := src
 BUILDDIR := build
+TARGETDIR := bin
 TARGET:= bin/SIApop
 TARGET-TD := bin/SIApop-td
 SRCEXT := cpp
@@ -27,10 +28,12 @@ INC := -I /usr/local/include
 all: $(TARGET) $(TARGET-TD)
 
 $(TARGET): $(OBJECTS)
+	@mkdir -p bin
 	@echo " Linking..."
 	@echo " $(CC) $^ -o $(TARGET) -L $(LPATH) $(LIB)"; $(CC) $^ -o $(TARGET) $(LIB)
 
 $(TARGET-TD): $(OBJECTS-TD)
+	@mkdir -p bin
 	@echo " Linking..."
 	@echo " $(CC) $^ -o $(TARGET-TD) -L $(LPATH) $(LIB)"; $(CC) $^ -o $(TARGET-TD) $(LIB)
 
