@@ -1,4 +1,4 @@
-# Ignore the buid and lib dirs
+# Ignore the build and lib dirs
 build
 test
 lib/*
@@ -12,3 +12,6 @@ bin/*
 # Ignore Output files
 results/*
 test/*
+
+# Ignore to do file
+TODO
