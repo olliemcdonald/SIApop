@@ -28,7 +28,7 @@ Requirements
 Installation
 ------------
 
-**On a Mac / Linux:**
+**On a Mac:**
 
 Install SIApop in Terminal by navigating to the SIApop directory and running:
 
@@ -43,15 +43,14 @@ Note: GSL may be installed in a different location and may require changing the 
 
 **Windows:**
 
-Install [Cygwin](https://cygwin.com) along with the gcc-g++, gsl, gsl-devel, and make packages and their dependencies. The library and include paths in the Makefile should be changed to
-
-    LPATH:= /usr/lib
-    INC:= /usr/include
-
-Navigate to the SIApop directory and run
+Install [Cygwin](https://cygwin.com) along with the gcc-g++, gsl, gsl-devel, and make packages and their dependencies. Navigate to the SIApop directory and run
 
     make
 
+If an error occurs, the library and include paths in the Makefile may need to be changed to
+
+    LPATH:= /usr/lib
+    INC:= /usr/include
 
 
 Using SIApop
