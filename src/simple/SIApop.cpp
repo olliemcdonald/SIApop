@@ -23,6 +23,7 @@
 #include <chrono>
 #include <map>
 #include <vector>
+#include <cstring>
 #include <string>
 #include <cmath>
 #include <gsl/gsl_randist.h>

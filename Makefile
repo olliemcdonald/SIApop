@@ -25,10 +25,15 @@ FOLDER-SIMPLE := simple
 SOURCES-SIMPLE := $(shell find $(SRCDIR)/$(FOLDER-SIMPLE) -type f -name *$.$(SRCEXT))
 OBJECTS-SIMPLE := $(patsubst $(SRCDIR)/$(FOLDER-SIMPLE)/%,$(BUILDDIR)/$(FOLDER-SIMPLE)/%,$(SOURCES-SIMPLE:.$(SRCEXT)=.o))
 
-CFLAGS := -g -Wall
+CFLAGS := -g -Wall -std=c++0x
 LIB := -lgsl
+
+# For Mac with Homebrew
 LPATH := /usr/local/lib
-INC := -I /usr/local/include
+INC := /usr/local/include
+# For Windows with cygwin
+# LPATH := /usr/lib
+# INC := /usr/include
 
 all: $(TARGET) $(TARGET-TD) $(TARGET-SIMPLE)
 
@@ -49,15 +54,15 @@ $(TARGET-SIMPLE): $(OBJECTS-SIMPLE)
 
 $(BUILDDIR)/$(FOLDER)/%.o: $(SRCDIR)/$(FOLDER)/%.$(SRCEXT)
 	@mkdir -p $(BUILDDIR)/$(FOLDER)
-	@echo " $(CC) $(CFLAGS) -I include/constant-rate $(INC) -L $(LPATH) -c -o $@ $<"; $(CC) $(CFLAGS) -I include/constant-rate $(INC) -c -o $@ $<
+	@echo " $(CC) $(CFLAGS) -I include/constant-rate -I $(INC) -L $(LPATH) -c -o $@ $<"; $(CC) $(CFLAGS) -I include/constant-rate -I $(INC) -c -o $@ $<
 
 $(BUILDDIR)/$(FOLDER-TD)/%.o: $(SRCDIR)/$(FOLDER-TD)/%.$(SRCEXT)
 	@mkdir -p $(BUILDDIR)/$(FOLDER-TD)
-	@echo " $(CC) $(CFLAGS) -I include/time-dependent $(INC) -L $(LPATH) -c -o $@ $<"; $(CC) $(CFLAGS) -I include/time-dependent $(INC) -c -o $@ $<
+	@echo " $(CC) $(CFLAGS) -I include/time-dependent -I $(INC) -L $(LPATH) -c -o $@ $<"; $(CC) $(CFLAGS) -I include/time-dependent -I $(INC) -c -o $@ $<
 
 $(BUILDDIR)/$(FOLDER-SIMPLE)/%.o: $(SRCDIR)/$(FOLDER-SIMPLE)/%.$(SRCEXT)
 	@mkdir -p $(BUILDDIR)/$(FOLDER-SIMPLE)
-	@echo " $(CC) $(CFLAGS) -I include/simple $(INC) -L $(LPATH) -c -o $@ $<"; $(CC) $(CFLAGS) -I include/simple $(INC) -c -o $@ $<
+	@echo " $(CC) $(CFLAGS) -I include/simple -I $(INC) -L $(LPATH) -c -o $@ $<"; $(CC) $(CFLAGS) -I include/simple -I $(INC) -c -o $@ $<
 
 clean:
 	@echo " Cleaning...";

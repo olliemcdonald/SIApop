@@ -23,8 +23,9 @@
 #include <chrono>
 #include <map>
 #include <vector>
-#include <string>
+#include <cstring>
 #include <cmath>
+#include <string>
 #include <gsl/gsl_randist.h>
 
 #include "globalstructs.h"
