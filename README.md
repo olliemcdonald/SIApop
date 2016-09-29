@@ -53,10 +53,11 @@ Install SIApop in Terminal by navigating to the SIApop directory and running:
 
     make
 
-Three executables should be created in SIApop/bin/, reflecting time-homogeneous and inhomogeneous simulations
+Three executables should be created in SIApop/bin/, reflecting time-homogeneous and inhomogeneous simulations, and birth-death processes without mutations.
 
     /SIApop/bin/SIApop
     /SIApop/bin/SIApop-td
+    /SIApop/bin/SIApop-simple
 
 Note: GSL may be installed in a different location and may require changing the include and library paths in the Makefile.
 
@@ -233,15 +234,10 @@ ancestors having different rates. The files are found in
 Contribute
 ----------
 
-- Issue Tracker: github.com/SIApop/SIApop/issues
-- Source Code: github.com/SIApop/SIApop
+- Issue Tracker: github.com/olliemcdonald/SIApop/issues
+- Source Code: github.com/olliemcdonald/SIApop
 
 Support
 -------
 
 If you are having issues, please let us know.
-
-License
--------
-
-The project is licensed under the ... license.
