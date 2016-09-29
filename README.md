@@ -7,6 +7,16 @@ Implementation is in Terminal with the following command:
 
     ./SIApop -in ./inputfile.txt -anc ./ancestors.txt -out ./results/
 
+Uses
+----
+
+SIApop (Simulating Infinite-Allele populations) is a set of standalone C++ programs to simulate homogeneous and inhomogeneous stochastic branching processes under a very flexible set of assumptions. The software simulates clonal evolution with the emergence of driver and passenger mutations under the infinite-allele assumption. The software is an application of the Gillespie Stochastic Simulation Algorithm expanded to a large number of cell types and scenarios, with the intention of allowing users to easily modify existing models or create their own. Visualization functions in R are included to show results of individual simulations.
+
+A branching process is a stochastic process used to model the growth and composition of reproducing populations. Assumptions made in branching processes are individuals live for a random amount of time before splitting into a random number of individuals (both dictated by distribution functions). Individuals of the same type are independent and identically distributed. These processes are useful for modeling cell growth and evolution, as in a tumor.
+
+Three difference executables are included based on the type of simulation desired. A birth-death process with no mutations has a closed-form distribution, and is simulated without the Gillespie algorithm with SIApop-simple. The constant rate birth-death processes that allows for mutation can be simulated with SIApop. SIApop-td is used to model processes where birth and death rates may change as a function of time.
+
+
 
 Features
 --------
@@ -17,6 +27,7 @@ Features
 Requirements
 ------------
 
+**Mac:**
 - C++ compiler (clang or g++)
 - [GNU Scientific Library](https://www.gnu.org/software/gsl/)
   * Available as a Homebrew package for OS X users
@@ -24,17 +35,25 @@ Requirements
     OR
   * Download the latest [GSL library](http://ftpmirror.gnu.org/gsl/)
 
+**Windows:**
+- Cygwin
+- Cygwin packages:
+  * gcc-g++
+  * gsl
+  * gsl-devel
+  * make
+
 
 Installation
 ------------
 
-**On a Mac:**
+**Mac:**
 
 Install SIApop in Terminal by navigating to the SIApop directory and running:
 
     make
 
-Two executables should be created in SIApop/bin/, reflecting time-homogeneous and inhomogeneous simulations
+Three executables should be created in SIApop/bin/, reflecting time-homogeneous and inhomogeneous simulations
 
     /SIApop/bin/SIApop
     /SIApop/bin/SIApop-td
