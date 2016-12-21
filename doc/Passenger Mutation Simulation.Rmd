@@ -115,7 +115,7 @@ barcode %>%
   facet_wrap(~run)
 ```
 
-The trajector of ancestors can also be plotted using the time course data.
+The trajectory of ancestors can also be plotted using the time course data.
 
 ```{r trajectory, warning = FALSE}
 timedata %>% filter(unique_id %in% c('a1.a', 'a2.a', 'a3.a', 'a4.a', 'a5.a')) %>%
@@ -123,3 +123,11 @@ timedata %>% filter(unique_id %in% c('a1.a', 'a2.a', 'a3.a', 'a4.a', 'a5.a')) %>
   geom_line() + scale_x_log10() + scale_y_log10() +
   facet_wrap(~run)
 ```
+
+
+## References
+
+Miller, CA, et al. Visualizing tumor evolution with the fishplot package for R. bioRxiv 059055; doi: http://dx.doi.org/10.1101/059055.
+
+Miller, CA, fishplot, (2016), Github repository, https://github.com/chrisamiller/fishplot.
+
