@@ -1,4 +1,5 @@
 # Ignore the build and lib dirs
+bin
 build
 test
 lib/*
@@ -15,3 +16,7 @@ test/*
 
 # Ignore to do file
 TODO
+
+# Ignore R files
+.Rhistory
+.Rproj.user
