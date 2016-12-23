@@ -4,6 +4,7 @@ project(siapop)
 # Set verbose for generating makefile and c++ flags
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(MAKE_CXX_FLAGS "-g -Wall")
+add_definitions(-std=c++11)
 
 # executables placed in ./bin and libraries in ./lib
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_HOME_DIRECTORY}/bin)
