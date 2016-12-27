@@ -9,6 +9,6 @@ set(INCLUDE_DIRS ${GSL_INCLUDE_DIRS})
 
 set(LIBS ${LIBS} ${GSL_LIBRARIES})
 
-add_executable(siapop-constant ${SOURCES})
+add_executable(siapop ${SOURCES})
 
-target_link_libraries(siapop-constant ${LIBS})
+target_link_libraries(siapop ${LIBS})

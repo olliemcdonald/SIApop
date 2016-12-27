@@ -28,20 +28,48 @@ Requirements
 ------------
 
 **Mac:**
-- C++ compiler (clang or g++)
+- C++ compiler
+  * Install command line tools by opening Terminal and typing
+
+    `xcode-select --install`
+
 - [GNU Scientific Library](https://www.gnu.org/software/gsl/)
   * Available as a Homebrew package for OS X users
 
-    OR
+    `brew install gsl`
+
+  OR
+
   * Download the latest [GSL library](http://ftpmirror.gnu.org/gsl/)
 
+- cmake
+  * Available as a Homebrew package for OS X users
+
+    `brew install cmake`
+
+  OR
+
+  * Download the latest [cmake release](https://cmake.org/download/)
+
 **Windows:**
-- Cygwin
-- Cygwin packages:
-  * gcc-g++
-  * gsl
-  * gsl-devel
-  * make
+- [Cygwin](https://cygwin.com/install.html)
+  * During the install, search for and include the following Cygwin packages:
+    * gcc-g++
+    * gsl
+    * gsl-devel
+    * make
+    * cmake
+
+**Linux:**
+- C++ compiler
+  * In Terminal type
+    `sudo apt-get install build-essential`
+- GNU Scientific Library
+  * In Terminal type
+    `sudo apt-get install gsl-bin libgsl0-dev`
+- cmake
+  * In Terminal type
+    `sudo apt-get install cmake`
 
 
 Installation
@@ -49,28 +77,15 @@ Installation
 
 **Mac:**
 
-Install SIApop in Terminal by navigating to the SIApop directory and running:
+Install SIApop in Terminal/Cygwin by navigating to the SIApop directory and running:
 
-    make
+    `cmake . && make`
 
-Three executables should be created in SIApop/bin/, reflecting time-homogeneous and inhomogeneous simulations, and birth-death processes without mutations.
+Three executables should be created in SIApop/bin/, reflecting the time-homogeneous process (SIApop), inhomogeneous process (SIApop-td), and birth-death processes without mutations (SIApop-simple).
 
-    /SIApop/bin/SIApop
-    /SIApop/bin/SIApop-td
-    /SIApop/bin/SIApop-simple
-
-Note: GSL may be installed in a different location and may require changing the include and library paths in the Makefile.
-
-**Windows:**
-
-Install [Cygwin](https://cygwin.com) along with the gcc-g++, gsl, gsl-devel, and make packages and their dependencies. Navigate to the SIApop directory and run
-
-    make
-
-If an error occurs, the library and include paths in the Makefile may need to be changed to
-
-    LPATH:= /usr/lib
-    INC:= /usr/include
+    /SIApop/bin/SIApop - time-homogeneous
+    /SIApop/bin/SIApop-td - time-inhomogeneous
+    /SIApop/bin/SIApop-simple - no mutation
 
 
 Using SIApop
