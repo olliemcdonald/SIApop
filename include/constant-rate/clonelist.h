@@ -129,13 +129,13 @@ public:
   // Next Step Functions
   double AdvanceTime(double curr_time);
   void AdvanceState(double curr_time, double next_time);
-  void InsertNode(clone* newnode, clone* parentnode, int number_mutations);
-  void InsertAncestor(clone* ancestor);
+  void InsertNode(struct clone* newnode, struct clone* parentnode, int number_mutations);
+  void InsertAncestor(struct clone* ancestor);
 
   // Linked List Manipulation Functions
-  void ChangeAncestorAllele(clone* thisnode, bool add_daughter);
-  void CloneSort(clone* sortnode, bool is_birth);
-  void CutNodeOut(clone* zeronode);
+  void ChangeAncestorAllele(struct clone* thisnode, bool add_daughter);
+  void CloneSort(struct clone* sortnode, bool is_birth);
+  void CutNodeOut(struct clone* zeronode);
   void DeleteNode();
   void TreeTrim(double threshold, int max_pop);
 

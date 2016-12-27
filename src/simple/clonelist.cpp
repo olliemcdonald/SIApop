@@ -36,7 +36,7 @@ void CloneList::init()
   creates nodes based on the number of clones and individuals defined
   in input file.
 */
-void CloneList::InsertAncestor(clone* ancestor)
+void CloneList::InsertAncestor(struct clone* ancestor)
 {
   if( ancestor->clone_id.empty() )
   {

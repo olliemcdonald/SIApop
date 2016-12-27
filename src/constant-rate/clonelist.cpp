@@ -36,7 +36,7 @@ void CloneList::init()
 // InsertNode attaches the newly created node (in NewClone) to the end of the
 // linked list. Number of mutations was included for the punctuated scenario
 // to add to the ID.
-void CloneList::InsertNode(clone* newnode, clone* parentnode, int number_mutations)
+void CloneList::InsertNode(struct clone* newnode, struct clone* parentnode, int number_mutations)
 {
   num_clones++;
 
@@ -87,7 +87,7 @@ void CloneList::InsertNode(clone* newnode, clone* parentnode, int number_mutatio
   creates nodes based on the number of clones and individuals defined
   in input file.
 */
-void CloneList::InsertAncestor(clone* ancestor)
+void CloneList::InsertAncestor(struct clone* ancestor)
 {
   if( ancestor->clone_id.empty() )
   {
@@ -132,7 +132,7 @@ void CloneList::InsertAncestor(clone* ancestor)
   term of unique_id). Implemented if count_alleles is TRUE as an input.
   add_daughter argument is based on whether a birth or death occurred.
 */
-void CloneList::ChangeAncestorAllele(clone* thisnode, bool add_daughter)
+void CloneList::ChangeAncestorAllele(struct clone* thisnode, bool add_daughter)
 {
   if(add_daughter) // if added a daughter then add to each allele_count
   {
@@ -161,7 +161,7 @@ void CloneList::ChangeAncestorAllele(clone* thisnode, bool add_daughter)
   Method should help speed up later runs when subclones have larger fitness
   and start to dominate the process.
 */
-void CloneList::CloneSort(clone* sortnode, bool is_birth)
+void CloneList::CloneSort(struct clone* sortnode, bool is_birth)
 {
   if(is_birth && sortnode->prevnode != NULL) // if a birth occurred and not root node
   {

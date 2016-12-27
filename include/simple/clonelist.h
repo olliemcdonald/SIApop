@@ -46,7 +46,7 @@ public:
   void init();
 
 
-  void InsertAncestor(clone* ancestor);
+  void InsertAncestor(struct clone* ancestor);
 
   void DeleteNode();
   // Output Functions
