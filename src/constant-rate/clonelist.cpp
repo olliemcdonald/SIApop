@@ -759,7 +759,7 @@ void CloneList::TreeTrim(double threshold, int max_pop)
   if at end of list, no need to link the next node (NULL value), Otherwise
   cut out value
 */
-void CloneList::CutNodeOut(clone* zeronode)
+void CloneList::CutNodeOut(struct clone* zeronode)
 {
   if(zeronode->prevnode == NULL) // if root
   {
