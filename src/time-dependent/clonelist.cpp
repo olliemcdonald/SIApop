@@ -359,6 +359,10 @@ void CloneList::AdvanceState(double curr_time, double next_time)
 
         pnode = new_mut_node;
         // add allele count to all ancestors
+        if(gp.count_alleles)
+        {
+          ChangeAncestorAllele(pnode, true);
+        }
 
       }
       else // no mutation, increment clone by 1
