@@ -78,7 +78,7 @@
 #' @param reduce if true we label a clone by its number rather than the list of ancestors
 #' 
 #'
-#' @return create_adj_matrix - returns an edge list for the population
+#' @return .create_adj_matrix - returns an edge list for the population
 #'
 .create_adj_matrix <- function(id_list, reduce = TRUE){
   # "0" is reserved for the root - rename any 0 allele to x0x
@@ -89,11 +89,33 @@
   edgelist$Parent[edgelist$Parent == ""] <- "0"
   
   if(reduce){
-    edgelist$Parent <- unlist(lapply(edgelist$Parent, .pop, ">"))
-    edgelist$Identity <- unlist(lapply(edgelist$Identity, .pop, ">"))
+    edgelist$Parent <- sapply(edgelist$Parent, .pop, ">")
+    edgelist$Identity <- sapply(edgelist$Identity, .pop, ">")
   }
   edgelist
   
+}
+
+##------------------------------------------------------------------------
+#' Gets the parents age of an individual from an edgelist and the vector of birth times
+#'
+#' @param Identity character vector of identity of a clone
+#' @param edgelist edgelist mapping parents to clones
+#' @param timevec vector of birth times of each clone in the same order as edgelist
+#' 
+#'
+#' @return .parent_age_at_split - returns a vector of times for parents ages at split
+#'
+.parent_age_at_split <- function(Identity, edgelist, timevec){
+  birth_time <- timevec[edgelist$Identity == Identity]
+  Parent <- edgelist[edgelist$Identity == Identity,]$Parent
+  
+  if(Parent == "0"){
+    return(0)
+  }
+  
+  Parent_birth_time <- timevec[edgelist$Identity == Parent]
+  return(birth_time - Parent_birth_time)
 }
 
 
@@ -175,16 +197,21 @@ convert_ggmuller <- function(time_data, threshold = 0.001, timepoints = NULL, fr
 
   edgelist <- .create_adj_matrix(to_keep, reduce = reduce)
   
-  time_data <- time_data %>% select(time, unique_id, numcells)
+#  time_data <- time_data %>% select(time, unique_id, numcells)
   pop_df <- time_data %>% filter(unique_id %in% to_keep) %>%
     rename(Generation = time, Identity = unique_id, Population = numcells)
   
-  if(reduce) pop_df$Identity <- unlist(lapply(pop_df$Identity, .pop, ">"))
+  if(reduce) pop_df$Identity <- sapply(pop_df$Identity, .pop, ">")
   
   max_cell_count <- max((pop_df %>% group_by(Generation) %>%
                            summarize(numcells = sum(Population)))$numcells)
   
-  pop_df <- rbind(data.frame(Generation = -1, Identity = "0", Population = 0), pop_df)
+  
+  dummy_ancestor <- data.frame(Generation = -1, Identity = "0", Population = 0, stringsAsFactors = F)
+  pop_df <- bind_rows(dummy_ancestor, pop_df)
+  pop2 <- pop_df
+  pop_df <- pop_df %>% select(Generation, Identity, Population)
+
   pop_df <- pop_df %>% spread(Identity, Population, fill = 0)
   
   if(freqplot) {
@@ -193,7 +220,9 @@ convert_ggmuller <- function(time_data, threshold = 0.001, timepoints = NULL, fr
     pop_df$'0' <- max_cell_count - rowSums(pop_df[,-1]) + 1e-8
   }
   
-  pop_df <- pop_df %>% gather(Identity, "Population", -1) %>% arrange(Generation)
+  pop_df <- pop_df %>% gather(Identity, "Population", -1) %>%
+    arrange(Generation)
+  pop_df <- pop_df %>% left_join(pop2)
   
   return(list(edgelist = edgelist, pop_df = pop_df))
 }
@@ -209,16 +238,66 @@ create_Muller_df <- function(Muller_list){
   get_Muller_df(Muller_list$edgelist, Muller_list$pop_df)
 }
 
-##------------------------------------------------------------------------
-#' Wrapper for ggmuller:adj_matrix_to_tree to return the edgelist output from
-#' convert_ggmuller as a tree structure from ape package
-#'
-#' @param Muller_list list as output from convert_ggmuller containing edge list and pop_df
-#'
-#' @return adj_matrix_to_tree - wrapper to return the edgelist as a tree structure
-#'
-adj_matrix_to_tree <- function(Muller_list){
-  edgelist <- Muller_list$edgelist
 
-  ggmuller::adj_matrix_to_tree(edgelist)
+##------------------------------------------------------------------------
+#' Converts data to igraph in tree layout to view the genetree at a specific time
+#'
+#' @param clonedata dataframe of a single timepoint
+#' @param threshold minimum allele frequency to count a clone at
+#' 
+#'
+#' @return convert_igraph - returns an igraph object
+#'
+convert_igraph <- function(clonedata, threshold = 0.01, size = NULL, color = NULL){
+  
+  to_keep <- (clonedata %>% mutate(allelefreq = count_alleles / sum(count_alleles)) %>%
+                filter(allelefreq >= threshold))$unique_id
+  
+  clonedata <- clonedata %>% filter(unique_id %in% to_keep)
+  
+  edgelist <- .create_adj_matrix(to_keep)
+  edgelist <- edgelist[edgelist$Parent != 0,]
+  
+  birth_times <- sapply(edgelist$Identity, .parent_age_at_split, edgelist, clonedata$initialtime)
+  nodes <- sapply(clonedata$unique_id, .pop, ">")
+  birth_times <- max(clonedata$initialtime) - clonedata$initialtime
+  
+  genetree_graph <- graph.data.frame(edgelist)
+  genetree_graph <- add_layout_(genetree_graph, as_tree())
+  graph_attr(genetree_graph, "layout")[,2] <- birth_times[match(as_ids(V(genetree_graph)), nodes)]
+  
+  if(!is.null(color)){
+    if(color == "fitness"){
+      value <- clonedata$birthrate - clonedata$deathrate
+      value <- value[match(as_ids(V(genetree_graph)), nodes)]
+    } else if(color == "age"){
+      value <- clonedata$initialtime
+      value <- value[match(as_ids(V(genetree_graph)), nodes)]
+      
+    } else if(color == "count"){
+      value <- clonedata$numcells
+      value <- value[match(as_ids(V(genetree_graph)), nodes)]
+    } else{
+      stop("no applicable variable for color")
+    }
+    
+    num_sequence <- seq(min(value), max(value), length.out = 100)
+    col_sequence <- colorRampPalette(c("blue", "red"))(100)
+    cols <- sapply(value, function(x) which.min(abs(num_sequence - x)))
+    
+    vertex_attr(genetree_graph, "color") <- col_sequence[cols]
+  }
+  
+  if(!is.null(size)){
+    if(size == "count"){
+      value <- log10(clonedata$numcells)
+      value <- value[match(as_ids(V(genetree_graph)), nodes)]
+    } else {
+      stop("no applicable variable for size")
+    }
+    num_sequence <- seq(min(value), max(value), length.out = 5)
+    sizes <- sapply(value, function(x) which.min(abs(num_sequence - x)))
+    vertex_attr(genetree_graph, "size") <- num_sequence[sizes]
+  }
+  return(genetree_graph)
 }
