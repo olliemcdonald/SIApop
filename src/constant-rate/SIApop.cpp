@@ -197,7 +197,7 @@ int main(int argc, char *argv[])
   clonedata.precision(12);
   if(gp.count_alleles)
   {
-    clonedata << "run\tunique_id\tnumcells\tcount_alleles\tbirthrate\tdeathrate\tmutprob\t"
+    clonedata << "run\tunique_id\tnumcells\tallelefreq\tbirthrate\tdeathrate\tmutprob\t"
       "initialtime\tsubclone_count\tnum_mut\tnum_drivers\tis_driver" << "\n";
   }
   else

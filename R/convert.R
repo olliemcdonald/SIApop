@@ -250,7 +250,7 @@ create_Muller_df <- function(Muller_list){
 #'
 convert_igraph <- function(clonedata, threshold = 0.01, size = NULL, color = NULL){
   
-  to_keep <- (clonedata %>% mutate(allelefreq = count_alleles / sum(count_alleles)) %>%
+  to_keep <- (clonedata %>% mutate(allelefreq = allelefreq / sum(allelefreq)) %>%
                 filter(allelefreq >= threshold))$unique_id
   
   clonedata <- clonedata %>% filter(unique_id %in% to_keep)
